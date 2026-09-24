@@ -96,12 +96,18 @@ Bloqueos manuales del arrendatario (mantención, evento privado, lluvia).
 
 Un bloqueo puede cubrir varias horas seguidas, no solo un bloque.
 
-### `resenas/{resenaId}`
+### `resenas/{reservaId}`
 
-- `reservaId` (una reseña por reserva)
+El ID del documento **es el ID de la reserva**, no uno autogenerado. Como la regla de negocio ya es
+una reseña por reserva, esto evita tener que hacer una query para saber si ya existe: la security
+rule solo necesita `exists()` sobre ese mismo ID.
+
 - `complejoId`, `canchaId`
 - `jugadorId`, `jugadorNombre`
 - `rating` (1 a 5), `comentario`
+- `equipoNombre`, `equipoRivalNombre`, `resultado` (texto libre, todos opcionales — ej. "Los
+  Tigres", "Halcones FC", "3-2"). Sin validación de formato ni entidad "equipo" detrás; es
+  contenido de la reseña, igual que el comentario.
 - `reportada` (boolean)
 - `createdAt`
 
@@ -173,8 +179,14 @@ Reglas mínimas:
   los cambios de estado pasan **siempre por Route Handler con Admin SDK**, nunca escritura directa
   desde el cliente.
 - `bloqueos`: escritura solo del dueño del complejo.
-- `resenas`: lectura pública; creación solo si el usuario tiene una reserva `jugada` en ese complejo
-  sin reseña previa.
+- `resenas`: lectura pública. Creación solo si no existe ya un documento con ese ID (`reservaId`) y
+  la reserva correspondiente es del usuario y está `jugada`:
+  ```
+  allow create: if !exists(/databases/$(database)/documents/resenas/$(reservaId))
+    && get(/databases/$(database)/documents/reservas/$(reservaId)).data.jugadorId == request.auth.uid
+    && get(/databases/$(database)/documents/reservas/$(reservaId)).data.estado == 'jugada';
+  ```
+  Sin edición ni borrado posterior desde el cliente.
 - `notificaciones`: cada usuario lee solo las suyas; solo puede marcar `leida`.
 
 La credencial del Admin SDK va en variables de entorno del servidor. Nunca en el cliente.

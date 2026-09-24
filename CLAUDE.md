@@ -60,7 +60,7 @@ propios complejos y jugador en cualquier otro.
 La pregunta de autorización nunca es "¿este usuario es arrendatario?" sino
 **"¿este usuario es dueño de este complejo?"**.
 
-- **Jugador:** busca, reserva, cancela, deja reseñas.
+- **Jugador:** busca, reserva, cancela, deja reseñas con equipo, rival y resultado del partido.
 - **Arrendatario:** crea complejos, define canchas, horarios y precios, bloquea bloques, cancela reservas de sus canchas.
 - **Admin:** aprueba o rechaza complejos. Cuentas creadas manualmente, sin flujo de registro.
 
@@ -109,7 +109,8 @@ que empiece el partido. No rompas esa relación.
 
 **Jugador:** registro y login, búsqueda por comuna + fecha + hora + formato, ficha de complejo con
 grilla de bloques, checkout con Webpay de integración, comprobante, "Mis reservas" con estados,
-cancelación, reseñas sobre reservas jugadas.
+cancelación, reseñas sobre reservas jugadas con equipo propio, equipo rival y resultado (todo texto
+libre, opcional).
 
 **Arrendatario:** postulación de complejo con datos y fotos, gestión de canchas (formato, horario
 de atención, precio), bloqueo manual de bloques, listado de reservas recibidas, cancelación con
@@ -134,6 +135,9 @@ No implementes nada de esto aunque aparezca dibujado en los wireframes:
 - Notificaciones programadas (recordatorios, invitación a reseñar por correo)
 - Invitar por WhatsApp / pago dividido entre jugadores
 - Tests automatizados
+- Entidad "equipo" persistente, con roster, ranking o historial agregado entre encuentros, y
+  cualquier flujo para buscar jugadores o desafiar rivales dentro de la app. Equipo, rival y
+  resultado son solo texto libre dentro de la reseña de una reserva jugada.
 
 **El sistema no tiene tareas programadas ni cron jobs.** Si una funcionalidad los necesita, está
 fuera de alcance.
