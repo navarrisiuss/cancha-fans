@@ -1,69 +1,89 @@
-import Image from "next/image";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Logo } from "./componentes-ui";
+import { InicioInteractivo } from "./inicio-cliente";
+
+export const metadata: Metadata = {
+  title: "CanchaFans — Reserva canchas de fútbol en Chile",
+  description: "Busca canchas F5, F7 y F11 por comuna, reserva tu horario y paga en línea.",
+};
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <div className="min-h-screen overflow-x-hidden bg-[#F0EEE9] text-[#12241C]">
+      <main>
+        <InicioInteractivo />
+
+        <section id="funciona" className="bg-white py-24">
+          <div className="mx-auto max-w-[1240px] px-5 lg:px-8">
+            <div className="max-w-xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0F7A4D]">Así de simple</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.035em] sm:text-[42px]">De la búsqueda a la cancha.</h2>
+            </div>
+            <div className="mt-12 grid gap-px overflow-hidden rounded-[24px] border border-[#E7E5DF] bg-[#E7E5DF] md:grid-cols-3">
+              {[
+                ["01", "Busca tu cancha", "Elige comuna, fecha, hora y el formato que necesita tu equipo."],
+                ["02", "Asegura el horario", "Reserva pagando el total o una seña del 30% en un checkout seguro."],
+                ["03", "Llega y juega", "Recibe tu comprobante digital y revisa todos los detalles desde tu cuenta."],
+              ].map(([numero, titulo, texto]) => (
+                <div key={numero} className="bg-white p-8 lg:p-10">
+                  <span className="grid h-11 w-11 place-items-center rounded-full bg-[#12241C] text-xs font-semibold text-white">{numero}</span>
+                  <h3 className="mt-8 text-xl font-semibold">{titulo}</h3>
+                  <p className="mt-3 text-sm leading-6 text-[#627067]">{texto}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="arrendatarios" className="mx-auto max-w-[1240px] px-5 py-24 lg:px-8">
+          <div className="relative overflow-hidden rounded-[30px] bg-[#0F7A4D] px-7 py-14 text-white sm:px-12 lg:px-16 lg:py-16">
+            <div className="field-lines absolute inset-0 opacity-25" />
+            <div className="relative max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/70">Para arrendatarios</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">Más reservas. Menos mensajes.</h2>
+              <p className="mt-5 max-w-xl text-base leading-7 text-white/75">
+                Publica tus canchas, controla bloqueos y recibe reservas confirmadas desde un solo lugar.
+              </p>
+              <button className="mt-8 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-[#0F7A4D]">Quiero publicar mi complejo</button>
+            </div>
+          </div>
+        </section>
       </main>
+
+      <footer className="bg-[#12241C] text-white">
+        <div className="mx-auto flex max-w-[1240px] flex-col justify-between gap-8 px-5 py-12 sm:flex-row lg:px-8">
+          <div>
+            <Link href="/" aria-label="CanchaFans, inicio">
+              <Logo claro />
+            </Link>
+            <p className="mt-4 max-w-xs text-sm leading-6 text-white/55">La forma simple y segura de reservar canchas de fútbol en Chile.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-12 text-sm">
+            <div className="flex flex-col gap-3">
+              <span className="font-semibold">CanchaFans</span>
+              <a className="text-white/60" href="#funciona">
+                Cómo funciona
+              </a>
+              <a className="text-white/60" href="#arrendatarios">
+                Publica tu cancha
+              </a>
+            </div>
+            <div className="flex flex-col gap-3">
+              <span className="font-semibold">Soporte</span>
+              <a className="text-white/60" href="#">
+                Centro de ayuda
+              </a>
+              <a className="text-white/60" href="#">
+                Reglas de cancelación
+              </a>
+            </div>
+          </div>
+        </div>
+        <div className="mx-auto max-w-[1240px] border-t border-white/10 px-5 py-6 text-xs text-white/40 lg:px-8">
+          © 2026 CanchaFans. Todos los derechos reservados.
+        </div>
+      </footer>
     </div>
   );
 }
