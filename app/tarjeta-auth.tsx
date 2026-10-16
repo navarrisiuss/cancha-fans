@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { Logo } from "./componentes-ui";
+import { Icono, Logo } from "./componentes-ui";
 
 export function TarjetaAuth({
   titulo,
@@ -19,6 +19,15 @@ export function TarjetaAuth({
 }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#F0EEE9] px-5 py-16">
+      <div className="mb-6 w-full max-w-[420px]">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-[#627067] transition-colors hover:text-[#12241C]"
+        >
+          <Icono nombre="chevron" className="h-4 w-4 rotate-180" />
+          Volver al inicio
+        </Link>
+      </div>
       <Link href="/" aria-label="CanchaFans, inicio" className="mb-8">
         <Logo />
       </Link>
