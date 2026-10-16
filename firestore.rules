@@ -1,0 +1,27 @@
+// Copia de referencia de las security rules de Firestore. Las rules vigentes se publican a mano en
+// la consola de Firebase (Firestore → Reglas); si cambias este archivo, publícalo allí también.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Cada quien lee y escribe solo su propio documento. isAdmin no se puede activar desde el
+    // cliente: se cambia a mano en la consola, que no pasa por estas rules.
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(
+             ['email', 'displayName', 'phone', 'photoURL', 'isAdmin', 'createdAt'])
+        && request.resource.data.isAdmin == false
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['displayName', 'phone', 'photoURL']);
+
+      allow delete: if false;
+    }
+  }
+}
