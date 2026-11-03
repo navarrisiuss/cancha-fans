@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { auth, db } from "../../lib/firebase/client";
+import { auth } from "../../lib/firebase/client";
 import { mensajeErrorAuth, type MensajeError } from "../../lib/firebase/errores-auth";
+import { crearDocumentoUsuario } from "../../lib/firebase/usuarios";
 
 export function FormularioCrearCuenta() {
   const [enviando, setEnviando] = useState(false);
@@ -34,17 +34,9 @@ export function FormularioCrearCuenta() {
       // Al crear la cuenta, Firebase deja la sesión iniciada en el navegador.
       const credencial = await createUserWithEmailAndPassword(auth, correo, contrasena);
       await updateProfile(credencial.user, { displayName: nombre });
-      // Se guarda el correo que devuelve Firebase (normalizado), no el del input: la security
-      // rule lo compara contra el token. Si esta escritura falla, la cuenta queda en Auth sin
-      // documento en users; el login deberá crearlo si falta.
-      await setDoc(doc(db, "users", credencial.user.uid), {
-        email: credencial.user.email,
-        displayName: nombre,
-        phone: null,
-        photoURL: null,
-        isAdmin: false,
-        createdAt: serverTimestamp(),
-      });
+      // Si esta escritura falla, la cuenta queda en Auth sin documento en users; el login lo
+      // crea cuando falta.
+      await crearDocumentoUsuario(credencial.user, nombre);
       setNombreCreado(nombre);
     } catch (errorFirebase) {
       setError(mensajeErrorAuth(errorFirebase));

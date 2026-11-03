@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { signOut } from "firebase/auth";
+import { auth } from "../lib/firebase/client";
+import { useSesion } from "../lib/firebase/use-sesion";
 import { Icono, Logo } from "./componentes-ui";
 
 const fotoHero = "https://images.unsplash.com/photo-1740024023028-1efcfa9bb8de?auto=format&fit=crop&w=1200&q=85";
@@ -11,8 +14,18 @@ export function InicioInteractivo() {
   const [formato, setFormato] = useState("Todos");
   const [menuAbierto, setMenuAbierto] = useState(false);
   const hoy = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const { usuario, cargando } = useSesion();
+  // Primer nombre para el saludo; si la cuenta no tiene nombre, se usa el correo.
+  const nombreSaludo = usuario?.displayName?.trim().split(/\s+/)[0] || usuario?.email || "";
 
   const irAlListado = () => document.getElementById("complejos")?.scrollIntoView({ behavior: "smooth" });
+
+  // signOut borra la sesión guardada en el navegador; useSesion se entera solo y el header vuelve
+  // a mostrar "Iniciar sesión".
+  const cerrarSesion = () => {
+    setMenuAbierto(false);
+    void signOut(auth);
+  };
 
   return (
     <>
@@ -21,17 +34,33 @@ export function InicioInteractivo() {
           <Link href="/" aria-label="CanchaFans, inicio">
             <Logo claro />
           </Link>
-          <div className="hidden items-center gap-3 md:flex">
-            <Link href="/iniciar-sesion" className="px-2 text-sm font-semibold text-white transition-opacity hover:opacity-70">
-              Iniciar sesión
-            </Link>
-            <Link
-              href="/crear-cuenta"
-              className="rounded-xl border border-white/30 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-            >
-              Crear cuenta
-            </Link>
-          </div>
+          {/* Mientras Firebase confirma la sesión no se muestra nada, para no parpadear entre
+              "Iniciar sesión" y "Cerrar sesión". */}
+          {!cargando && usuario && (
+            <div className="hidden items-center gap-3 md:flex">
+              <span className="px-2 text-sm font-semibold text-white/80">Hola, {nombreSaludo}</span>
+              <button
+                type="button"
+                onClick={cerrarSesion}
+                className="rounded-xl border border-white/30 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          )}
+          {!cargando && !usuario && (
+            <div className="hidden items-center gap-3 md:flex">
+              <Link href="/iniciar-sesion" className="px-2 text-sm font-semibold text-white transition-opacity hover:opacity-70">
+                Iniciar sesión
+              </Link>
+              <Link
+                href="/crear-cuenta"
+                className="rounded-xl border border-white/30 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Crear cuenta
+              </Link>
+            </div>
+          )}
           <button
             aria-label="Abrir menú"
             className="rounded-full border border-white/30 p-2.5 md:hidden"
@@ -43,16 +72,32 @@ export function InicioInteractivo() {
         {menuAbierto && (
           <div className="border-t border-white/15 bg-[#12241C] px-5 py-5 md:hidden">
             <nav className="flex flex-col gap-4 text-sm font-semibold">
-              <Link href="/iniciar-sesion" onClick={() => setMenuAbierto(false)}>
-                Iniciar sesión
-              </Link>
-              <Link
-                href="/crear-cuenta"
-                onClick={() => setMenuAbierto(false)}
-                className="rounded-xl border border-white/30 py-3 text-center"
-              >
-                Crear cuenta
-              </Link>
+              {!cargando && usuario && (
+                <>
+                  <span className="text-white/80">Hola, {nombreSaludo}</span>
+                  <button
+                    type="button"
+                    onClick={cerrarSesion}
+                    className="rounded-xl border border-white/30 py-3 text-center"
+                  >
+                    Cerrar sesión
+                  </button>
+                </>
+              )}
+              {!cargando && !usuario && (
+                <>
+                  <Link href="/iniciar-sesion" onClick={() => setMenuAbierto(false)}>
+                    Iniciar sesión
+                  </Link>
+                  <Link
+                    href="/crear-cuenta"
+                    onClick={() => setMenuAbierto(false)}
+                    className="rounded-xl border border-white/30 py-3 text-center"
+                  >
+                    Crear cuenta
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
         )}

@@ -26,6 +26,20 @@ const mensajes: Record<string, MensajeError> = {
     texto: "La contraseña es muy débil. Usa al menos 6 caracteres.",
     debeActuar: true,
   },
+  // Firebase devuelve el mismo código para correo inexistente y contraseña incorrecta, para no
+  // revelar qué correos tienen cuenta.
+  "auth/invalid-credential": {
+    texto: "El correo o la contraseña no son correctos.",
+    debeActuar: true,
+  },
+  "auth/user-disabled": {
+    texto: "Esta cuenta está deshabilitada. Escríbenos si crees que es un error.",
+    debeActuar: true,
+  },
+  "auth/too-many-requests": {
+    texto: "Hubo demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+    debeActuar: false,
+  },
   "auth/network-request-failed": {
     texto: "No pudimos conectarnos. Revisa tu conexión e inténtalo de nuevo.",
     debeActuar: false,
