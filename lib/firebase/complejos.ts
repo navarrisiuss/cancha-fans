@@ -3,7 +3,7 @@
 // crearComplejo usa el SDK cliente y solo corre en el navegador.
 import "client-only";
 
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { collection, doc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db } from "./client";
 import type { Comuna, Region } from "../comunas";
 
@@ -19,15 +19,24 @@ export type DatosComplejo = {
   region: Region;
   comuna: Comuna;
   direccion: string;
+};
+
+// Datos sensibles: van en complejos/{id}/privado/datos, no en el documento del complejo. Las
+// security rules protegen documentos completos, no campos; si estuvieran junto al nombre, serían
+// públicos cuando el complejo se aprueba. Solo los leen el dueño y el admin.
+export type DatosLegales = {
   rut: string;
   razonSocial: string;
   datosBancarios: string;
 };
 
 // Crea la postulación directo en "en_revision" (no hay borradores). formatosDisponibles nace vacío:
-// se llena cuando el arrendatario agregue canchas. Cuesta 1 escritura.
-export async function crearComplejo(ownerId: string, datos: DatosComplejo) {
-  const referencia = await addDoc(collection(db, "complejos"), {
+// se llena cuando el arrendatario agregue canchas. Los dos documentos se escriben en un batch: o se
+// crean ambos o ninguno. Cuesta 2 escrituras.
+export async function crearComplejo(ownerId: string, datos: DatosComplejo, legales: DatosLegales) {
+  const complejo = doc(collection(db, "complejos"));
+  const batch = writeBatch(db);
+  batch.set(complejo, {
     ...datos,
     ownerId,
     fotos: [],
@@ -38,5 +47,7 @@ export async function crearComplejo(ownerId: string, datos: DatosComplejo) {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
-  return referencia.id;
+  batch.set(doc(complejo, "privado", "datos"), { ...legales, ownerId });
+  await batch.commit();
+  return complejo.id;
 }
