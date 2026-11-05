@@ -29,7 +29,9 @@ No hay campo `role`. Ser arrendatario se deriva de tener complejos con `ownerId 
 ### `complejos/{complejoId}`
 
 - `ownerId` → `users/{userId}`
-- `nombre`, `descripcion`, `comuna`, `direccion`
+- `nombre`, `descripcion`, `region`, `comuna`, `direccion`. La `comuna` es la que filtra la búsqueda;
+  `region` permite agrupar o filtrar por región (ej. métricas de admin) sin derivarla. Ambas salen de
+  la lista cerrada de `lib/comunas.ts`.
 - `fotos` (array de URLs de Storage)
 - `rut`, `razonSocial`, `datosBancarios` (visibles solo para el dueño y el admin)
 - `estado`: `borrador` | `en_revision` | `aprobado` | `rechazado`
