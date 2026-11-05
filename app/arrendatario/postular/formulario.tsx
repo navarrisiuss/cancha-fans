@@ -3,7 +3,8 @@
 // Componente cliente: necesita la sesión de Firebase Auth (useSesion) y, más adelante, estado y
 // eventos del formulario. Por ahora solo exige haber iniciado sesión; los campos vienen después.
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
+import { normalizarRut } from "../../../lib/rut";
 import { COMUNAS_POR_REGION, REGIONES, type Region } from "../../../lib/comunas";
 import { useSesion } from "../../../lib/firebase/use-sesion";
 
@@ -48,6 +49,27 @@ export function FormularioPostular() {
         {region && COMUNAS_POR_REGION[region].map((c) => <option key={c}>{c}</option>)}
       </Selector>
       <Campo etiqueta="Dirección" nombre="direccion" placeholder="Calle y número" autoComplete="street-address" />
+      <Campo
+        etiqueta="RUT"
+        nombre="rut"
+        placeholder="12.345.678-5"
+        // Marca el campo como inválido mientras el dígito verificador no calce; el navegador lo
+        // avisa al enviar el formulario.
+        alCambiar={(e) =>
+          e.currentTarget.setCustomValidity(normalizarRut(e.currentTarget.value) ? "" : "Ingresa un RUT válido.")
+        }
+      />
+      <Campo etiqueta="Razón social" nombre="razonSocial" placeholder="Nombre legal de la empresa o persona" />
+      <label className="flex flex-col gap-1.5 text-sm font-semibold text-[#12241C]">
+        Datos bancarios
+        <textarea
+          name="datosBancarios"
+          required
+          rows={3}
+          placeholder="Banco, tipo de cuenta, número de cuenta y titular"
+          className={clasesInput}
+        />
+      </label>
     </form>
   );
 }
@@ -91,11 +113,13 @@ function Campo({
   nombre,
   placeholder,
   autoComplete,
+  alCambiar,
 }: {
   etiqueta: string;
   nombre: string;
   placeholder: string;
   autoComplete?: string;
+  alCambiar?: (e: ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
     <label className="flex flex-col gap-1.5 text-sm font-semibold text-[#12241C]">
@@ -105,6 +129,7 @@ function Campo({
         name={nombre}
         required
         autoComplete={autoComplete}
+        onChange={alCambiar}
         placeholder={placeholder}
         className={clasesInput}
       />
