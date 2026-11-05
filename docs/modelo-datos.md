@@ -29,9 +29,10 @@ No hay campo `role`. Ser arrendatario se deriva de tener complejos con `ownerId 
 ### `complejos/{complejoId}`
 
 - `ownerId` → `users/{userId}`
-- `nombre`, `descripcion`, `comuna`, `direccion`
+- `nombre`, `descripcion`, `region`, `comuna`, `direccion`. La `comuna` es la que filtra la búsqueda;
+  `region` permite agrupar o filtrar por región (ej. métricas de admin) sin derivarla. Ambas salen de
+  la lista cerrada de `lib/comunas.ts`.
 - `fotos` (array de URLs de Storage)
-- `rut`, `razonSocial`, `datosBancarios` (visibles solo para el dueño y el admin)
 - `estado`: `borrador` | `en_revision` | `aprobado` | `rechazado`
 - `formatosDisponibles` (array: `F5`, `F7`, `F11`) — denormalizado desde las canchas para poder
   filtrar en la búsqueda sin leer las subcolecciones
@@ -40,6 +41,17 @@ No hay campo `role`. Ser arrendatario se deriva de tener complejos con `ownerId 
 - `createdAt`, `updatedAt`
 
 Solo los complejos con `estado == 'aprobado'` aparecen en búsquedas públicas.
+
+### `complejos/{complejoId}/privado/datos`
+
+Un único documento con los datos sensibles del complejo, separado del documento principal porque las
+security rules protegen documentos completos, no campos: en `complejos` la lectura es pública cuando
+el complejo está aprobado, y estos datos no pueden quedar ahí.
+
+- `ownerId` (copia del complejo, para que la rule no necesite leer el documento padre)
+- `rut`, `razonSocial`, `datosBancarios`
+
+Lo leen solo el dueño y el admin. Se crea junto con el complejo en un batch.
 
 ### `complejos/{complejoId}/canchas/{canchaId}`
 
@@ -174,6 +186,8 @@ Reglas mínimas:
 - `users`: cada quien lee y escribe su propio documento. `isAdmin` no es escribible desde el cliente.
 - `complejos`: lectura pública solo si `estado == 'aprobado'`; el dueño lee y edita los suyos; el
   admin lee todos. El campo `estado` **solo lo cambia el admin**.
+- `complejos/{id}/privado/datos`: lectura y creación solo del dueño (`ownerId == request.auth.uid`);
+  lectura también del admin. Nunca pública.
 - `canchas`: lectura pública si el complejo padre está aprobado; escritura solo del dueño.
 - `reservas`: lee el jugador dueño de la reserva, el dueño del complejo y el admin. La creación y
   los cambios de estado pasan **siempre por Route Handler con Admin SDK**, nunca escritura directa
