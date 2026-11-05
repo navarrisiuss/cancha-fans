@@ -5,6 +5,7 @@ import "client-only";
 
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "./client";
+import type { Comuna, Region } from "../comunas";
 
 export type EstadoComplejo = "borrador" | "en_revision" | "aprobado" | "rechazado";
 
@@ -15,7 +16,8 @@ export type Formato = "F5" | "F7" | "F11";
 export type DatosComplejo = {
   nombre: string;
   descripcion: string;
-  comuna: string;
+  region: Region;
+  comuna: Comuna;
   direccion: string;
   rut: string;
   razonSocial: string;
