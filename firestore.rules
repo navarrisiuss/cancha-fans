@@ -23,5 +23,59 @@ service cloud.firestore {
 
       allow delete: if false;
     }
+
+    // Lee isAdmin del documento del usuario. Cada llamada cuenta como 1 lectura; solo se evalúa
+    // cuando las condiciones anteriores del || no alcanzan.
+    function esAdmin() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Lectura pública solo si el admin lo aprobó; el dueño y el admin leen siempre. Se crea siempre
+    // en revisión y con los contadores en cero: nadie puede publicarse a sí mismo. Sin edición ni
+    // borrado hasta que existan esas funcionalidades (la aprobación del admin va por Admin SDK).
+    match /complejos/{complejoId} {
+      allow read: if resource.data.estado == 'aprobado'
+        || (request.auth != null && resource.data.ownerId == request.auth.uid)
+        || esAdmin();
+
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(
+             ['ownerId', 'nombre', 'descripcion', 'region', 'comuna', 'direccion', 'fotos',
+              'estado', 'formatosDisponibles', 'ratingPromedio', 'totalResenas',
+              'createdAt', 'updatedAt'])
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.estado == 'en_revision'
+        && request.resource.data.nombre is string
+        && request.resource.data.descripcion is string
+        && request.resource.data.region is string
+        && request.resource.data.comuna is string
+        && request.resource.data.direccion is string
+        && request.resource.data.fotos == []
+        && request.resource.data.formatosDisponibles == []
+        && request.resource.data.ratingPromedio == 0
+        && request.resource.data.totalResenas == 0
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update, delete: if false;
+
+      // Datos legales del complejo: nunca públicos, ni siquiera con el complejo aprobado.
+      match /privado/{documento} {
+        allow read: if request.auth != null
+          && (resource.data.ownerId == request.auth.uid || esAdmin());
+
+        // getAfter ve el complejo que se crea en el mismo batch: evita que alguien ocupe el
+        // documento privado de un complejo ajeno.
+        allow create: if request.auth != null
+          && documento == 'datos'
+          && request.resource.data.keys().hasOnly(['ownerId', 'rut', 'razonSocial', 'datosBancarios'])
+          && request.resource.data.ownerId == request.auth.uid
+          && getAfter(/databases/$(database)/documents/complejos/$(complejoId)).data.ownerId
+               == request.auth.uid;
+
+        allow update, delete: if false;
+      }
+    }
   }
 }
