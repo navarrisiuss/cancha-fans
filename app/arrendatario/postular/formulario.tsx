@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { normalizarRut } from "../../../lib/rut";
 import { COMUNAS_POR_REGION, REGIONES, type Comuna, type Region } from "../../../lib/comunas";
-import { crearComplejo } from "../../../lib/firebase/complejos";
+import { crearComplejo, MAX_BYTES_FOTO, MAX_FOTOS, TIPOS_FOTO } from "../../../lib/firebase/complejos";
 import type { MensajeError } from "../../../lib/firebase/errores-auth";
 import { useSesion } from "../../../lib/firebase/use-sesion";
 
@@ -61,6 +61,7 @@ export function FormularioPostular() {
           direccion: texto("direccion"),
         },
         { rut, razonSocial: texto("razonSocial"), datosBancarios: texto("datosBancarios") },
+        datos.getAll("fotos").filter((f): f is File => f instanceof File && f.size > 0),
       );
       setEnviado(true);
     } catch {
@@ -132,6 +133,34 @@ export function FormularioPostular() {
           placeholder="Banco, tipo de cuenta, número de cuenta y titular"
           className={clasesInput}
         />
+      </label>
+      <label className="flex flex-col gap-1.5 text-sm font-semibold text-[#12241C]">
+        Fotos del complejo
+        <input
+          type="file"
+          name="fotos"
+          multiple
+          required
+          accept={TIPOS_FOTO.join(",")}
+          // Valida con la API nativa (se avisa al enviar): cantidad, tipo y peso. Las security rules
+          // vuelven a comprobar el tipo y el peso en Storage.
+          onChange={(e) => {
+            const fotos = Array.from(e.currentTarget.files ?? []);
+            const problema =
+              fotos.length > MAX_FOTOS
+                ? `Sube como máximo ${MAX_FOTOS} fotos.`
+                : fotos.some((f) => !TIPOS_FOTO.includes(f.type))
+                  ? "Las fotos deben ser JPG, PNG o WebP."
+                  : fotos.some((f) => f.size >= MAX_BYTES_FOTO)
+                    ? "Cada foto debe pesar menos de 5 MB."
+                    : "";
+            e.currentTarget.setCustomValidity(problema);
+          }}
+          className="rounded-xl border border-[#DAD7CF] px-4 py-3 text-sm font-medium file:mr-3 file:rounded-lg file:border-0 file:bg-[#F0EEE9] file:px-3 file:py-1.5 file:text-sm file:font-semibold"
+        />
+        <span className="text-xs font-medium text-[#627067]">
+          Entre 1 y {MAX_FOTOS} fotos en JPG, PNG o WebP, de menos de 5 MB cada una.
+        </span>
       </label>
       {error && (
         <p
