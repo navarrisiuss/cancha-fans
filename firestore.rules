@@ -51,7 +51,8 @@ service cloud.firestore {
         && request.resource.data.region is string
         && request.resource.data.comuna is string
         && request.resource.data.direccion is string
-        && request.resource.data.fotos == []
+        && request.resource.data.fotos is list
+        && request.resource.data.fotos.size() <= 5
         && request.resource.data.formatosDisponibles == []
         && request.resource.data.ratingPromedio == 0
         && request.resource.data.totalResenas == 0
