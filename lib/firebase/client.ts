@@ -5,6 +5,7 @@ import "client-only";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // Cada variable se lee de forma literal: Next.js reemplaza `process.env.NEXT_PUBLIC_*` por su
 // valor al compilar, y un acceso dinámico (process.env[nombre]) no llega al navegador.
@@ -43,3 +44,4 @@ const app = getApps().length > 0 ? getApp() : initializeApp(configuracion);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
