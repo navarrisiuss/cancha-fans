@@ -1,0 +1,20 @@
+// Copia de referencia de las security rules de Firebase Storage. Se publican a mano en la consola
+// de Firebase (Storage → Reglas); si cambias este archivo, publícalo allí también.
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Fotos de un complejo: complejos/{uid del dueño}/{id del complejo}/{archivo}. El dueño solo
+    // sube bajo su propio uid, así que no necesita leer Firestore para validar permisos. Las fotos
+    // se leen sin sesión porque las URLs se muestran en la ficha pública; no hay edición ni borrado.
+    match /complejos/{uid}/{complejoId}/{archivo} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+
+      allow update, delete: if false;
+    }
+  }
+}
