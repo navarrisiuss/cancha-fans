@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "./componentes-ui";
 import { InicioInteractivo } from "./inicio-cliente";
+import { PORCENTAJE_SENA } from "../lib/reglas";
 
 export const metadata: Metadata = {
   title: "CanchaFans — Reserva canchas de fútbol en Chile",
@@ -23,7 +24,7 @@ export default function Home() {
             <div className="mt-12 grid gap-px overflow-hidden rounded-[24px] border border-[#E7E5DF] bg-[#E7E5DF] md:grid-cols-3">
               {[
                 ["01", "Busca tu cancha", "Elige comuna, fecha, hora y el formato que necesita tu equipo."],
-                ["02", "Asegura el horario", "Reserva pagando el total o una seña del 30% en un checkout seguro."],
+                ["02", "Asegura el horario", `Reserva pagando el total o una seña del ${PORCENTAJE_SENA}% en un checkout seguro.`],
                 ["03", "Llega y juega", "Recibe tu comprobante digital y revisa todos los detalles desde tu cuenta."],
               ].map(([numero, titulo, texto]) => (
                 <div key={numero} className="bg-white p-8 lg:p-10">
