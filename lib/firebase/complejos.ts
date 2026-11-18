@@ -3,7 +3,16 @@
 // crearComplejo usa el SDK cliente y solo corre en el navegador.
 import "client-only";
 
-import { collection, doc, serverTimestamp, writeBatch } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  serverTimestamp,
+  where,
+  writeBatch,
+  type Timestamp,
+} from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "./client";
 import type { Comuna, Region } from "../comunas";
@@ -35,6 +44,29 @@ export type DatosLegales = {
   razonSocial: string;
   datosBancarios: string;
 };
+
+// Lo que muestra "Mis complejos" de cada complejo.
+export type ResumenComplejo = {
+  id: string;
+  nombre: string;
+  comuna: Comuna;
+  estado: EstadoComplejo;
+};
+
+// Complejos del usuario, del más nuevo al más antiguo. Es una sola consulta (cuesta 1 lectura por
+// complejo) y sin listener, porque el estado solo cambia cuando el admin revisa. Las security rules
+// la permiten porque el filtro ownerId == uid calza con la condición de dueño.
+// Se ordena en el cliente: un orderBy junto al where exigiría un índice compuesto.
+export async function listarMisComplejos(ownerId: string): Promise<ResumenComplejo[]> {
+  const resultado = await getDocs(query(collection(db, "complejos"), where("ownerId", "==", ownerId)));
+  return resultado.docs
+    .map((d) => ({ d, creado: (d.data().createdAt as Timestamp | null)?.toMillis() ?? 0 }))
+    .sort((a, b) => b.creado - a.creado)
+    .map(({ d }) => {
+      const { nombre, comuna, estado } = d.data();
+      return { id: d.id, nombre, comuna, estado };
+    });
+}
 
 // Crea la postulación directo en "en_revision" (no hay borradores). formatosDisponibles nace vacío:
 // se llena cuando el arrendatario agregue canchas. Primero se suben las fotos y después se escriben

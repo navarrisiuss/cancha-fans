@@ -39,6 +39,9 @@ export function InicioInteractivo() {
           {!cargando && usuario && (
             <div className="hidden items-center gap-3 md:flex">
               <span className="px-2 text-sm font-semibold text-white/80">Hola, {nombreSaludo}</span>
+              <Link href="/arrendatario/complejos" className="px-2 text-sm font-semibold text-white transition-opacity hover:opacity-70">
+                Mis complejos
+              </Link>
               <button
                 type="button"
                 onClick={cerrarSesion}
@@ -75,6 +78,9 @@ export function InicioInteractivo() {
               {!cargando && usuario && (
                 <>
                   <span className="text-white/80">Hola, {nombreSaludo}</span>
+                  <Link href="/arrendatario/complejos" onClick={() => setMenuAbierto(false)}>
+                    Mis complejos
+                  </Link>
                   <button
                     type="button"
                     onClick={cerrarSesion}
