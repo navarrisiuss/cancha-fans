@@ -1,6 +1,16 @@
 // Validación del RUT chileno con el dígito verificador (módulo 11). Sin dependencias: son pocas
 // líneas y no cambia. Sirve en servidor y en cliente.
 
+// Formatea mientras se escribe: "123456785" → "12.345.678-5". El último carácter siempre es el
+// dígito verificador. Descarta todo lo que no sea dígito, la K si no va al final y lo que pase de
+// 9 caracteres. No valida: eso lo hace normalizarRut.
+export function formatearRut(texto: string): string {
+  const limpio = texto.replace(/[^\dkK]/g, "").toUpperCase().replace(/K(?=.)/g, "").slice(0, 9);
+  if (limpio.length < 2) return limpio;
+  const cuerpo = limpio.slice(0, -1).replace(/\B(?=(\d{3})+$)/g, ".");
+  return `${cuerpo}-${limpio.slice(-1)}`;
+}
+
 // Acepta "12.345.678-5", "12345678-5" o "123456785" (y "k" minúscula). Devuelve el RUT normalizado
 // ("12345678-5") si el dígito verificador es correcto, o null si no lo es.
 export function normalizarRut(texto: string): string | null {
