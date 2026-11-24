@@ -16,6 +16,7 @@ import {
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "./client";
 import type { Comuna, Region } from "../comunas";
+import type { Formato } from "../tipos/cancha";
 
 // Límites de las fotos. Los mismos valores están en storage.rules y firestore.rules.
 export const MAX_FOTOS = 5;
@@ -24,7 +25,9 @@ export const TIPOS_FOTO = ["image/jpeg", "image/png", "image/webp"];
 
 export type EstadoComplejo = "borrador" | "en_revision" | "aprobado" | "rechazado";
 
-export type Formato = "F5" | "F7" | "F11";
+// Formato vive en lib/tipos/cancha.ts (único lugar); se re-exporta para no romper los imports
+// existentes, como el de app/api/admin/complejos/[id]/route.ts.
+export type { Formato };
 
 // Datos que escribe el arrendatario al postular. El resto de los campos del modelo (estado,
 // notaAdmin, rating, fechas) los pone el sistema o el admin, no el formulario.
