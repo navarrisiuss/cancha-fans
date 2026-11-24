@@ -77,12 +77,17 @@ export default function Home() {
             </div>
             <div className="flex flex-col gap-3">
               <span className="font-semibold">Soporte</span>
-              <a className="text-white/60" href="#">
+              {/* Las páginas de contenido las crea la rama feat/admin-listados-metricas-contenido; las
+                  rutas quedan fijadas acá para que esa rama no tenga que tocar la landing. */}
+              <Link className="text-white/60" href="/ayuda">
                 Centro de ayuda
-              </a>
-              <a className="text-white/60" href="#">
+              </Link>
+              <Link className="text-white/60" href="/reglas-de-cancelacion">
                 Reglas de cancelación
-              </a>
+              </Link>
+              <Link className="text-white/60" href="/terminos">
+                Términos y condiciones
+              </Link>
             </div>
           </div>
         </div>
