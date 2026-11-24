@@ -13,6 +13,7 @@ import { Icono, Logo } from "./componentes-ui";
 import { COMUNAS_POR_REGION, REGIONES } from "../lib/comunas";
 import { FORMATOS } from "../lib/tipos/cancha";
 import { hoyEnSantiago } from "../lib/zona-horaria";
+import { MAXIMO_CARACTERES_BUSQUEDA } from "./buscar/nombre-complejo";
 import { TarjetaComplejo, type ResumenPublicoComplejo } from "./complejos/tarjeta-complejo";
 
 const fotoHero = "https://images.unsplash.com/photo-1740024023028-1efcfa9bb8de?auto=format&fit=crop&w=1200&q=85";
@@ -154,8 +155,21 @@ export function InicioInteractivo({
             </p>
           </div>
 
-          <Form action="/buscar" id="buscar" className="mt-10 scroll-mt-8 rounded-[24px] bg-white p-3 shadow-[0_24px_70px_rgba(18,36,28,0.18)] lg:absolute lg:-bottom-12 lg:left-8 lg:right-8 lg:mt-0 lg:p-4">
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr_.8fr_auto]">
+          <Form action="/buscar" id="buscar" className="mt-10 scroll-mt-8 rounded-[24px] bg-white p-3 shadow-[0_24px_70px_rgba(18,36,28,0.18)] lg:p-4 xl:absolute xl:-bottom-12 xl:left-8 xl:right-8 xl:mt-0">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[1.5fr_1.3fr_1.25fr_1fr_.85fr_auto]">
+              <label className="flex min-h-[76px] cursor-text items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-[#F0EEE9]/70 xl:px-3">
+                <Icono nombre="search" className="h-5 w-5 shrink-0 text-[#0F7A4D]" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#627067]">Complejo</span>
+                  <input
+                    name="q"
+                    type="text"
+                    maxLength={MAXIMO_CARACTERES_BUSQUEDA}
+                    placeholder="Ej. Los Leones"
+                    className="mt-1 w-full bg-transparent text-sm font-semibold placeholder:font-medium"
+                  />
+                </span>
+              </label>
               <label className="group flex min-h-[76px] cursor-pointer items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-[#F0EEE9]/70">
                 <Icono nombre="pin" className="h-5 w-5 shrink-0 text-[#0F7A4D]" />
                 <span className="min-w-0 flex-1">
@@ -174,7 +188,7 @@ export function InicioInteractivo({
                 </span>
                 <Icono nombre="chevron" className="h-4 w-4 rotate-90" />
               </label>
-              <label className="flex min-h-[76px] cursor-pointer items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-[#F0EEE9]/70">
+              <label className="flex min-h-[76px] cursor-pointer items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-[#F0EEE9]/70 xl:px-3">
                 <Icono nombre="calendar" className="h-5 w-5 shrink-0 text-[#0F7A4D]" />
                 <span className="min-w-0">
                   <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#627067]">Fecha</span>
@@ -210,7 +224,7 @@ export function InicioInteractivo({
               </label>
               <button
                 type="submit"
-                className="flex min-h-[76px] sm:col-span-2 lg:col-span-1 items-center justify-center gap-2 rounded-2xl bg-[#0F7A4D] px-7 text-sm font-semibold text-white transition-colors hover:bg-[#0B6840]"
+                className="flex min-h-[76px] items-center justify-center gap-2 rounded-2xl bg-[#0F7A4D] px-7 text-sm font-semibold text-white transition-colors hover:bg-[#0B6840]"
               >
                 <Icono nombre="search" className="h-5 w-5" />
                 Buscar
@@ -220,7 +234,7 @@ export function InicioInteractivo({
         </div>
       </section>
 
-      <section id="complejos" className="mx-auto max-w-[1240px] px-5 pb-24 pt-16 lg:px-8 lg:pt-28">
+      <section id="complejos" className="mx-auto max-w-[1240px] px-5 pb-24 pt-16 lg:px-8 xl:pt-28">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0F7A4D]">Juega esta semana</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-[-0.035em] sm:text-[42px]">Canchas destacadas</h2>

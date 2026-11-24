@@ -12,7 +12,7 @@ import { listarComplejosDestacados } from "./complejos/datos-publicos";
 
 export const metadata: Metadata = {
   title: "CanchaFans — Reserva canchas de fútbol en Chile",
-  description: "Busca canchas F5, F7 y F11 por comuna, reserva tu horario y paga en línea.",
+  description: "Busca canchas F5, F7 y F11 por comuna o nombre del complejo, reserva tu horario y paga en línea.",
 };
 
 // ISR conserva la página estática entre visitas y vuelve a consultar Firestore
@@ -34,7 +34,7 @@ export default async function Inicio() {
             </div>
             <div className="mt-12 grid gap-px overflow-hidden rounded-[24px] border border-[#E7E5DF] bg-[#E7E5DF] md:grid-cols-3">
               {[
-                ["01", "Busca tu cancha", "Elige comuna, fecha, hora y el formato que necesita tu equipo."],
+                ["01", "Busca tu cancha", "Busca por comuna o nombre del complejo y elige fecha, hora y formato."],
                 ["02", "Asegura el horario", `Reserva pagando el total o una seña del ${PORCENTAJE_SENA}% en un checkout seguro.`],
                 ["03", "Llega y juega", "Recibe tu comprobante digital y revisa todos los detalles desde tu cuenta."],
               ].map(([numero, titulo, texto]) => (
