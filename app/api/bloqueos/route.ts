@@ -7,7 +7,14 @@ import { exigirDuenoDeComplejo } from "../../../lib/firebase/exigir-dueno";
 import { respuestaError } from "../../../lib/firebase/exigir-usuario";
 import { ocupaElBloque } from "../../../lib/reservas-estado";
 import type { EstadoReservaGuardado } from "../../../lib/tipos/reserva";
-import { esFechaValida, esHoraValida, instanteEnSantiago } from "../../../lib/zona-horaria";
+import {
+  esFechaValida,
+  esHoraValida,
+  hoyEnSantiago,
+  inicioDelDia,
+  inicioDelDiaSiguiente,
+  instanteEnSantiago,
+} from "../../../lib/zona-horaria";
 
 const MAX_MOTIVO = 200;
 
@@ -29,7 +36,7 @@ function extraerRangoHorario(cuerpo: Record<string, unknown>): { inicio: Date; f
       return { error: "Las horas de inicio y fin deben tener formato HH:mm." };
     }
     const inicio = instanteEnSantiago(fecha, horaInicio);
-    const fin = instanteEnSantiago(fecha, horaFin);
+    const fin = horaFin === "00:00" ? inicioDelDiaSiguiente(fecha) : instanteEnSantiago(fecha, horaFin);
     if (fin.getTime() <= inicio.getTime()) {
       return { error: "La hora de término debe ser posterior a la hora de inicio." };
     }
@@ -80,43 +87,66 @@ export async function POST(request: Request) {
   if (permiso instanceof Response) return permiso;
 
   const db = dbAdmin();
-  const canchaSnap = await db.collection("complejos").doc(complejoId).collection("canchas").doc(canchaId).get();
-  if (!canchaSnap.exists) {
+  const canchaRef = db.collection("complejos").doc(complejoId).collection("canchas").doc(canchaId);
+  const nuevoRef = db.collection("bloqueos").doc();
+
+  // Acotamos la consulta al rango del bloqueo usando el índice compuesto canchaId + inicio:
+  // desde el inicio del día del bloqueo hasta antes de `rango.fin`, y dentro de una transacción
+  // descartamos en memoria las que terminan antes o en `rango.inicio`.
+  const desdeDia = inicioDelDia(hoyEnSantiago(rango.inicio));
+  const consultaReservas = db
+    .collection("reservas")
+    .where("canchaId", "==", canchaId)
+    .where("inicio", ">=", Timestamp.fromDate(desdeDia))
+    .where("inicio", "<", Timestamp.fromDate(rango.fin));
+
+  const resultado = await db.runTransaction(async (tx): Promise<201 | 404 | 409> => {
+    const [canchaSnap, reservasSnap] = await Promise.all([
+      tx.get(canchaRef),
+      tx.get(consultaReservas),
+    ]);
+
+    if (!canchaSnap.exists) {
+      return 404;
+    }
+
+    const ahora = new Date();
+    const chocaConReserva = reservasSnap.docs.some((doc) => {
+      const inicioReserva = doc.get("inicio") as Timestamp | undefined;
+      const finReserva = doc.get("fin") as Timestamp | undefined;
+      const estado = doc.get("estado") as EstadoReservaGuardado | undefined;
+      const expiraAt = (doc.get("expiraAt") as Timestamp | null | undefined) ?? null;
+      if (!inicioReserva || !finReserva || !estado) return false;
+
+      if (finReserva.toMillis() <= rango.inicio.getTime()) return false;
+      if (inicioReserva.toMillis() >= rango.fin.getTime()) return false;
+
+      return ocupaElBloque({ estado, expiraAt, fin: finReserva }, ahora);
+    });
+
+    if (chocaConReserva) {
+      return 409;
+    }
+
+    tx.set(nuevoRef, {
+      complejoId,
+      canchaId,
+      ownerId: permiso.uid,
+      inicio: Timestamp.fromDate(rango.inicio),
+      fin: Timestamp.fromDate(rango.fin),
+      motivo,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    return 201;
+  });
+
+  if (resultado === 404) {
     return respuestaError(404, "La cancha no existe en este complejo.");
   }
-
-  // Consultamos las reservas de la cancha y verificamos en memoria si alguna reserva activa
-  // (según ocupaElBloque) se solapa con el rango [inicio, fin).
-  const reservasSnap = await db.collection("reservas").where("canchaId", "==", canchaId).get();
-  const ahora = new Date();
-  const chocaConReserva = reservasSnap.docs.some((doc) => {
-    const inicioReserva = doc.get("inicio") as Timestamp | undefined;
-    const finReserva = doc.get("fin") as Timestamp | undefined;
-    const estado = doc.get("estado") as EstadoReservaGuardado | undefined;
-    const expiraAt = (doc.get("expiraAt") as Timestamp | null | undefined) ?? null;
-    if (!inicioReserva || !finReserva || !estado) return false;
-
-    const seSolapan =
-      rango.inicio.getTime() < finReserva.toMillis() && rango.fin.getTime() > inicioReserva.toMillis();
-    if (!seSolapan) return false;
-
-    return ocupaElBloque({ estado, expiraAt, fin: finReserva }, ahora);
-  });
-
-  if (chocaConReserva) {
+  if (resultado === 409) {
     return respuestaError(409, "No puedes bloquear ese horario porque choca con una reserva activa.");
   }
-
-  const nuevoRef = db.collection("bloqueos").doc();
-  await nuevoRef.set({
-    complejoId,
-    canchaId,
-    ownerId: permiso.uid,
-    inicio: Timestamp.fromDate(rango.inicio),
-    fin: Timestamp.fromDate(rango.fin),
-    motivo,
-    createdAt: FieldValue.serverTimestamp(),
-  });
 
   return Response.json(
     {
