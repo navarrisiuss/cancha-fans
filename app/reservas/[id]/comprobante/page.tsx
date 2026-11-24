@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { Encabezado } from "../../../../components/encabezado";
 import { Comprobante } from "./comprobante";
+
+export const metadata: Metadata = { title: "Comprobante de reserva — CanchaFans" };
 
 // La página resuelve los parámetros en el servidor y deja la lectura autenticada al componente cliente.
 export default async function PaginaComprobante({ params, searchParams }: PageProps<"/reservas/[id]/comprobante">) {

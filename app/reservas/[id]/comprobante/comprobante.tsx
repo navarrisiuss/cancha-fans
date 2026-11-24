@@ -63,6 +63,9 @@ export function Comprobante({ id, reintentarRetorno }: { id: string; reintentarR
               <button type="submit" className={enlace}>Volver a verificar el pago</button>
             </form>
           )}
+          {estado === "pendiente_pago" && reserva.expiraAt && !reintentarRetorno && (
+            <p><Link className={enlace} href={`/checkout/${encodeURIComponent(id)}`}>Ir a pagar</Link></p>
+          )}
           <Link href="/mis-reservas" className={enlace}>Mis reservas</Link>
         </>
       )}

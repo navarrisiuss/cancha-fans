@@ -9,7 +9,7 @@ import { ocupaElBloque } from "../../../../lib/reservas-estado";
 import type { Bloqueo } from "../../../../lib/tipos/bloqueo";
 import type { Reserva } from "../../../../lib/tipos/reserva";
 import { confirmarPago, montoACobrar } from "../../../../lib/webpay";
-import { hoyEnSantiago } from "../../../../lib/zona-horaria";
+import { formatearFechaHora, hoyEnSantiago } from "../../../../lib/zona-horaria";
 
 function redirigir(request: Request, ruta: string) {
   const destino = new URL(ruta, process.env.NEXT_PUBLIC_APP_URL || request.url);
@@ -118,20 +118,21 @@ async function recibir(request: Request) {
     if (resultado) {
       const detalle = `${resultado.complejoNombre} · ${resultado.canchaNombre}`;
       try {
+        const fechaHora = formatearFechaHora(resultado.inicio.toDate());
         await Promise.all([
           notificar({
             userId: resultado.jugadorId,
             tipo: "reserva_confirmada",
             titulo: "Reserva confirmada",
-            mensaje: detalle,
+            mensaje: `${detalle}, ${fechaHora}.`,
             enlace: comprobante,
           }),
           notificar({
             userId: resultado.ownerId,
             tipo: "nueva_reserva",
             titulo: "Nueva reserva",
-            mensaje: detalle,
-            enlace: "/arrendatario/complejos",
+            mensaje: `${resultado.jugadorNombre} reservó ${detalle} para el ${fechaHora}.`,
+            enlace: "/arrendatario/reservas",
           }),
         ]);
       } catch (error) {

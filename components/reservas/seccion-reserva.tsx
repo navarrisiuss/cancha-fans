@@ -10,7 +10,7 @@ import { useSesion } from "../../lib/firebase/use-sesion";
 import { PORCENTAJE_SENA } from "../../lib/reglas";
 import type { CanchaConId } from "../../lib/tipos/cancha";
 import type { TipoPago } from "../../lib/tipos/reserva";
-import { esFechaValida, formatearHora, hoyEnSantiago } from "../../lib/zona-horaria";
+import { esFechaValida, esHoraValida, formatearHora, hoyEnSantiago } from "../../lib/zona-horaria";
 import { formatearMonto, montoSena } from "./formatos";
 
 // La URL no cambia mientras se está en la ficha, así que no hace falta escuchar cambios.
@@ -23,18 +23,19 @@ type Disponibilidad ={ consulta: string; intento: number } & (
 export function SeccionReserva({ complejoId, canchas }: { complejoId: string; canchas: CanchaConId[] }) {
   const router = useRouter();
   const { usuario, cargando } = useSesion();
-  // Si el jugador llega desde la búsqueda, la URL trae la fecha y el formato que eligió y se usan
-  // como valores iniciales hasta que el jugador cambie los selectores. Se lee window.location con
-  // useSyncExternalStore (en el servidor la búsqueda vale "") en vez de useSearchParams, porque la
-  // ficha es estática (ISR) y useSearchParams obligaría a envolverla en un Suspense.
+  // La URL trae la fecha, la hora y el formato de la búsqueda. Se lee window.location con
+  // useSyncExternalStore (en el servidor la búsqueda vale "") porque la ficha es estática (ISR)
+  // y useSearchParams obligaría a envolverla en un Suspense.
   const busqueda = useSyncExternalStore(sinSuscripcion, () => window.location.search, () => "");
   const parametrosUrl = new URLSearchParams(busqueda);
   const fechaUrl = parametrosUrl.get("fecha") ?? "";
+  const horaUrl = parametrosUrl.get("hora") ?? "";
   const formatoUrl = parametrosUrl.get("formato");
   const [canchaId, elegirCancha] = useState("");
   const [fechaElegida, elegirFecha] = useState<string | null>(null);
   const fecha = fechaElegida ?? (esFechaValida(fechaUrl) && fechaUrl >= hoyEnSantiago() ? fechaUrl : "");
-  const [inicio, elegirInicio] = useState("");
+  // null permite usar la hora de la URL. Una cadena vacía indica que se limpió una elección manual.
+  const [inicioElegido, elegirInicio] = useState<string | null>(null);
   const [tipoPago, elegirPago] = useState<TipoPago>("total");
   const [disponibilidad, guardarDisponibilidad] = useState<Disponibilidad>();
   const [intento, cambiarIntento] = useState(0);
@@ -50,7 +51,11 @@ export function SeccionReserva({ complejoId, canchas }: { complejoId: string; ca
   const actual = disponibilidad?.consulta === consulta && disponibilidad.intento === intento
     ? disponibilidad
     : undefined;
-  const bloque = actual?.bloques?.find((bloque) => bloque.inicio === inicio && bloque.estado === "libre");
+  const bloque = actual?.bloques?.find((bloque) =>
+    bloque.estado === "libre" && (inicioElegido === null
+      ? esHoraValida(horaUrl) && formatearHora(Date.parse(bloque.inicio)) === horaUrl
+      : bloque.inicio === inicioElegido),
+  );
 
   useEffect(() => {
     if (!consulta) return;
@@ -79,7 +84,7 @@ export function SeccionReserva({ complejoId, canchas }: { complejoId: string; ca
   }, [consulta, intento]);
 
   function volverACargar() {
-    elegirInicio("");
+    elegirInicio((anterior) => anterior === null ? null : "");
     cambiarIntento((anterior) => anterior + 1);
   }
 
@@ -164,7 +169,7 @@ export function SeccionReserva({ complejoId, canchas }: { complejoId: string; ca
                     key={horario.inicio}
                     type="button"
                     disabled={horario.estado === "ocupado"}
-                    aria-pressed={horario.inicio === inicio}
+                    aria-pressed={horario.inicio === bloque?.inicio}
                     onClick={() => { elegirInicio(horario.inicio); cambiarErrorReserva(""); }}
                     className="rounded-xl bg-[#D9F24A] px-2 py-2.5 text-sm font-semibold enabled:hover:ring-2 enabled:hover:ring-[#0F7A4D] aria-pressed:ring-2 aria-pressed:ring-[#0F7A4D] disabled:bg-[#F0EEE9] disabled:text-[#627067] disabled:aria-pressed:ring-0"
                   >
