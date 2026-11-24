@@ -107,9 +107,12 @@ Los tipos están en `lib/tipos/reserva.ts`. El estado que ve el usuario se calcu
 
 Índices compuestos necesarios (se crean a mano en la consola de Firebase → Firestore → Índices;
 este proyecto no usa la CLI de Firebase):
-- `jugadorId` + `inicio` (Mis reservas)
+- `jugadorId` + `inicio` **descendente** (Mis reservas, de la más reciente a la más antigua)
 - `canchaId` + `inicio` (cálculo de disponibilidad)
 - `ownerId` + `inicio` (panel del arrendatario)
+
+En `bloqueos` hace falta `canchaId` + `fin` (cálculo de disponibilidad: un bloqueo puede empezar
+otro día y seguir vigente). Si falta un índice, el error de Firestore trae un enlace que lo crea.
 
 ### `bloqueos/{bloqueoId}`
 
