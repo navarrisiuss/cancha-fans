@@ -65,8 +65,8 @@ export async function POST(request: Request) {
 
       return Response.json(inicio, { headers: cabeceras });
     });
-  } catch {
-    console.error("No se pudo iniciar el pago con Webpay.");
+  } catch (error) {
+    console.error("No se pudo iniciar el pago con Webpay.", error);
     return Response.json({ error: "No pudimos iniciar el pago. Intenta nuevamente." }, {
       status: 502, headers: { "Cache-Control": "no-store" },
     });

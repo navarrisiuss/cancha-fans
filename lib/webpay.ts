@@ -25,17 +25,26 @@ type ResultadoWebpay = {
   session_id: string;
 };
 
+// Confirma (commit) el pago. Sin commit, Transbank anula la transacción aunque el banco la haya
+// autorizado. Ojo: status() devuelve "AUTHORIZED" apenas el banco autoriza, ANTES del commit
+// (verificado contra el ambiente de integración), así que el estado no sirve para decidir si hay que
+// hacer commit: siempre se intenta el commit primero.
+//
+// Si el commit falla, se reintenta una vez (un error de red pudo cortar la respuesta). Si vuelve a
+// fallar, se consulta el estado: "AUTHORIZED" significa que un commit anterior ya se aplicó (por
+// ejemplo, un retorno duplicado) y el pago vale; "FAILED" u otro estado significa rechazo.
 export async function confirmarPago(token: string, venceEn: number): Promise<ResultadoWebpay | null> {
-  // Si Webpay alcanzó a confirmar y falló la escritura en Firestore, se recupera ese resultado.
-  const previo: ResultadoWebpay = await webpay.status(token);
-  if (previo.status !== "INITIALIZED") return previo;
   if (Date.now() >= venceEn) return null;
 
   try {
     return await webpay.commit(token);
-  } catch (error) {
-    const posterior: ResultadoWebpay = await webpay.status(token);
-    if (posterior.status !== "INITIALIZED") return posterior;
-    throw error;
+  } catch {
+    try {
+      return await webpay.commit(token);
+    } catch (error) {
+      const estado: ResultadoWebpay = await webpay.status(token);
+      if (estado.status !== "INITIALIZED") return estado;
+      throw error;
+    }
   }
 }

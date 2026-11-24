@@ -134,12 +134,12 @@ async function recibir(request: Request) {
             enlace: "/arrendatario/complejos",
           }),
         ]);
-      } catch {
-        console.error("No se pudieron enviar los avisos de la reserva.");
+      } catch (error) {
+        console.error("No se pudieron enviar los avisos de la reserva.", error);
       }
     }
-  } catch {
-    console.error("No se pudo procesar el retorno de Webpay.");
+  } catch (error) {
+    console.error("No se pudo procesar el retorno de Webpay.", error);
     if (retornoNormal && comprobante !== "/mis-reservas") comprobante += "?retorno=pendiente";
   }
 
