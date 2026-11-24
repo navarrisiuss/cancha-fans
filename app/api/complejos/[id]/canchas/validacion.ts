@@ -52,7 +52,8 @@ export function validarHorarioAtencion(
       return { error: `Las horas del día ${dia} deben tener formato HH:mm.` };
     }
     const minAbre = minutosDesdeMedianoche(abre);
-    const minCierra = minutosDesdeMedianoche(cierra);
+    // "00:00" en la hora de cierre representa las 24:00 (1440 minutos), igual que en disponibilidad.
+    const minCierra = cierra === "00:00" ? 24 * 60 : minutosDesdeMedianoche(cierra);
     if (minCierra <= minAbre) {
       return { error: `La hora de cierre debe ser posterior a la de apertura en ${dia}.` };
     }
