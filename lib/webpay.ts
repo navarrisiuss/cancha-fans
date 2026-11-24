@@ -10,7 +10,9 @@ export const webpay = new WebpayPlus.Transaction(new Options(
   IntegrationCommerceCodes.WEBPAY_PLUS,
   IntegrationApiKeys.WEBPAY,
   Environment.Integration,
-  5_000,
+  // 15 s por llamada: la primera conexión a Transbank (en frío) llegó a tardar más de 5 s en las
+  // pruebas y el pago quedaba sin verificar. Cabe dentro del tiempo máximo de una Vercel Function.
+  15_000,
 ));
 
 export function montoACobrar({ precioTotal, tipoPago }: Pick<Reserva, "precioTotal" | "tipoPago">) {
@@ -26,13 +28,13 @@ type ResultadoWebpay = {
 };
 
 // Confirma (commit) el pago. Sin commit, Transbank anula la transacción aunque el banco la haya
-// autorizado. Ojo: status() devuelve "AUTHORIZED" apenas el banco autoriza, ANTES del commit
-// (verificado contra el ambiente de integración), así que el estado no sirve para decidir si hay que
-// hacer commit: siempre se intenta el commit primero.
+// autorizado, así que el commit se intenta siempre y no se decide a partir de status(). En el
+// ambiente de integración se comprobó que un segundo commit de la misma transacción devuelve el
+// mismo resultado, así que repetirlo es seguro.
 //
 // Si el commit falla, se reintenta una vez (un error de red pudo cortar la respuesta). Si vuelve a
-// fallar, se consulta el estado: "AUTHORIZED" significa que un commit anterior ya se aplicó (por
-// ejemplo, un retorno duplicado) y el pago vale; "FAILED" u otro estado significa rechazo.
+// fallar, se consulta el estado: "AUTHORIZED" significa que el pago quedó autorizado; "FAILED" u
+// otro estado significa rechazo; "INITIALIZED" relanza el error y el comprobante ofrece reintentar.
 export async function confirmarPago(token: string, venceEn: number): Promise<ResultadoWebpay | null> {
   if (Date.now() >= venceEn) return null;
 
