@@ -3,7 +3,6 @@
 // dependen de la sesión de Firebase Auth en el navegador.
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Logo } from "../../../componentes-ui";
 import { GestionCanchasComplejo } from "./canchas";
 
 export const metadata: Metadata = {
@@ -18,9 +17,6 @@ export default async function PaginaCanchasComplejo(
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F0EEE9] px-5 py-12">
-      <Link href="/" aria-label="CanchaFans, inicio" className="mb-8">
-        <Logo />
-      </Link>
       <div className="w-full max-w-[780px] rounded-[24px] bg-white p-8 shadow-[0_8px_30px_rgba(18,36,28,0.06)]">
         <div className="mb-5">
           <Link
