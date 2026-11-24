@@ -43,6 +43,9 @@ export function Comprobante({ id, reintentarRetorno }: { id: string; reintentarR
           </div>
           <div>
             <h2 className="text-lg font-semibold">{reserva.complejoNombre} · {reserva.canchaNombre}</h2>
+            {reserva.jugadorRut && (
+              <p>A nombre de {reserva.jugadorNombre} · RUT {reserva.jugadorRut}</p>
+            )}
             <p>{formatearFechaHora(reserva.inicio.toDate())}</p>
           </div>
           <dl className="grid grid-cols-[1fr_auto] gap-2 border-y border-[#E7E5DF] py-4 text-sm">
