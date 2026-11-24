@@ -1,7 +1,8 @@
 "use client";
 
 // Componente cliente: requiere la sesión de Firebase Auth (useSesion), consulta las reservas con
-// ownerId == uid desde el navegador y abre el modal de confirmación para cancelar con motivo.
+// ownerId == uid y maneja el modal de cancelación con motivo. También arma y descarga el archivo CSV
+// directamente en el navegador (Blob y URL.createObjectURL) usando las reservas ya cargadas, sin lecturas extra.
 import * as Dialog from "@radix-ui/react-dialog";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useRouter } from "next/navigation";
@@ -13,14 +14,15 @@ import { useSesion } from "../../../lib/firebase/use-sesion";
 import { estadoVisibleReserva } from "../../../lib/reservas-estado";
 import type { EstadoReserva, ReservaConId } from "../../../lib/tipos/reserva";
 import { formatearFechaHora, formatearHora } from "../../../lib/zona-horaria";
+import { descargarCsvReservas, TEXTOS_ESTADO_RESERVA } from "./exportar-csv";
 
 // Lima (#D9F24A) se usa para el estado "pagada", que es uno de sus usos exclusivos en CLAUDE.md.
 const ETIQUETAS_ESTADO: Record<EstadoReserva, { texto: string; clases: string }> = {
-  pendiente_pago: { texto: "Pendiente de pago", clases: "bg-[#F0EEE9] text-[#4D5D54]" },
-  pagada: { texto: "Pagada", clases: "bg-[#D9F24A] text-[#12241C]" },
-  jugada: { texto: "Jugada", clases: "bg-[#0F7A4D] text-white" },
-  cancelada: { texto: "Cancelada", clases: "bg-[#12241C] text-white" },
-  expirada: { texto: "Expirada", clases: "bg-[#F0EEE9] text-[#627067]" },
+  pendiente_pago: { texto: TEXTOS_ESTADO_RESERVA.pendiente_pago, clases: "bg-[#F0EEE9] text-[#4D5D54]" },
+  pagada: { texto: TEXTOS_ESTADO_RESERVA.pagada, clases: "bg-[#D9F24A] text-[#12241C]" },
+  jugada: { texto: TEXTOS_ESTADO_RESERVA.jugada, clases: "bg-[#0F7A4D] text-white" },
+  cancelada: { texto: TEXTOS_ESTADO_RESERVA.cancelada, clases: "bg-[#12241C] text-white" },
+  expirada: { texto: TEXTOS_ESTADO_RESERVA.expirada, clases: "bg-[#F0EEE9] text-[#627067]" },
 };
 
 function formatearPesos(monto: number): string {
@@ -66,6 +68,14 @@ export function ListadoReservasRecibidas() {
               jugadorId: datos.jugadorId,
               jugadorNombre: datos.jugadorNombre,
               jugadorEmail: datos.jugadorEmail,
+              jugadorRut:
+                typeof datos.jugadorRut === "string" && datos.jugadorRut.trim()
+                  ? datos.jugadorRut.trim()
+                  : null,
+              jugadorTelefono:
+                typeof datos.jugadorTelefono === "string" && datos.jugadorTelefono.trim()
+                  ? datos.jugadorTelefono.trim()
+                  : null,
               complejoId: datos.complejoId,
               complejoNombre: datos.complejoNombre,
               complejoComuna: datos.complejoComuna,
@@ -203,6 +213,19 @@ export function ListadoReservasRecibidas() {
 
   return (
     <>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs font-medium text-[#627067]">
+          {reservas.length === 1 ? "1 reserva" : `${reservas.length} reservas`}
+        </p>
+        <button
+          type="button"
+          onClick={() => descargarCsvReservas(reservas)}
+          className="rounded-xl bg-[#0F7A4D] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#0B6840]"
+        >
+          Descargar CSV
+        </button>
+      </div>
+
       <ul className="flex flex-col gap-4">
         {reservas.map((reserva) => {
           const estadoVisible = estadoVisibleReserva(reserva, ahora);
@@ -235,6 +258,14 @@ export function ListadoReservasRecibidas() {
                 <p className="mt-1 text-sm text-[#4D5D54]">
                   Jugador: <span className="font-semibold">{reserva.jugadorNombre}</span> ({reserva.jugadorEmail})
                 </p>
+
+                {(reserva.jugadorRut || reserva.jugadorTelefono) && (
+                  <p className="mt-0.5 text-xs font-medium text-[#627067]">
+                    {reserva.jugadorRut && <>RUT: {reserva.jugadorRut}</>}
+                    {reserva.jugadorRut && reserva.jugadorTelefono && " · "}
+                    {reserva.jugadorTelefono && <>Teléfono: {reserva.jugadorTelefono}</>}
+                  </p>
+                )}
 
                 <p className="mt-1 text-xs font-medium text-[#627067]">
                   Pagado en línea: {formatearPesos(reserva.montoPagado)} · Saldo en complejo:{" "}
