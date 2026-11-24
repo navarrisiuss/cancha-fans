@@ -71,6 +71,13 @@ Lo leen solo el dueño y el admin. Se crea junto con el complejo en un batch.
 
 Horas en formato `"HH:mm"`, zona horaria fija America/Santiago.
 
+Las claves de `horarioAtencion` van **sin tilde**: `lunes`, `martes`, `miercoles`, `jueves`,
+`viernes`, `sabado`, `domingo` (son claves de un objeto, no texto de interfaz).
+
+**Las canchas se escriben por Route Handler con Admin SDK, no desde el cliente.** Cada alta, edición
+o desactivación actualiza también `formatosDisponibles` del complejo en el mismo batch, y las
+security rules no permiten al cliente escribir ese campo. Los tipos están en `lib/tipos/cancha.ts`.
+
 ### `reservas/{reservaId}`
 
 Colección raíz, no subcolección: el jugador necesita consultar sus reservas a través de varios
@@ -85,14 +92,21 @@ complejos.
 - `tipoPago`: `total` | `sena`
 - `comision` (6% de `precioTotal`, calculada al confirmar)
 - `estado`: ver máquina de estados abajo
+- `expiraAt` (timestamp, solo en `pendiente_pago`: `createdAt` + 10 min; `null` en los demás estados)
 - `cancelableHasta` (timestamp = `createdAt` + 1 h, calculado en el servidor)
 - `canceladaPor`: `jugador` | `arrendatario` | `null`
 - `motivoCancelacion`
+- `penalizacion` (number, CLP, o `null`): lo que el jugador pierde al cancelar fuera de la ventana
+  (30 % de `montoPagado`). Es un aviso, no se ejecuta ningún reembolso.
 - `tieneResena` (boolean)
 - `webpayToken`, `webpayOrdenCompra` (referencia del pago simulado)
 - `createdAt`, `updatedAt`
 
-Índices compuestos necesarios:
+Los tipos están en `lib/tipos/reserva.ts`. El estado que ve el usuario se calcula con
+`estadoVisibleReserva` de `lib/reservas-estado.ts`.
+
+Índices compuestos necesarios (se crean a mano en la consola de Firebase → Firestore → Índices;
+este proyecto no usa la CLI de Firebase):
 - `jugadorId` + `inicio` (Mis reservas)
 - `canchaId` + `inicio` (cálculo de disponibilidad)
 - `ownerId` + `inicio` (panel del arrendatario)
@@ -188,19 +202,22 @@ Reglas mínimas:
   admin lee todos. El campo `estado` **solo lo cambia el admin**.
 - `complejos/{id}/privado/datos`: lectura y creación solo del dueño (`ownerId == request.auth.uid`);
   lectura también del admin. Nunca pública.
-- `canchas`: lectura pública si el complejo padre está aprobado; escritura solo del dueño.
+- `canchas`: lectura pública si el complejo padre está aprobado; el dueño y el admin leen siempre.
+  **Sin escritura desde el cliente**: se escriben por Route Handler (ver la nota en `canchas`).
 - `reservas`: lee el jugador dueño de la reserva, el dueño del complejo y el admin. La creación y
   los cambios de estado pasan **siempre por Route Handler con Admin SDK**, nunca escritura directa
-  desde el cliente.
-- `bloqueos`: escritura solo del dueño del complejo.
-- `resenas`: lectura pública. Creación solo si no existe ya un documento con ese ID (`reservaId`) y
-  la reserva correspondiente es del usuario y está `jugada`:
-  ```
-  allow create: if !exists(/databases/$(database)/documents/resenas/$(reservaId))
-    && get(/databases/$(database)/documents/reservas/$(reservaId)).data.jugadorId == request.auth.uid
-    && get(/databases/$(database)/documents/reservas/$(reservaId)).data.estado == 'jugada';
-  ```
-  Sin edición ni borrado posterior desde el cliente.
-- `notificaciones`: cada usuario lee solo las suyas; solo puede marcar `leida`.
+  desde el cliente. Las consultas del cliente deben filtrar por `jugadorId` u `ownerId` igual al
+  uid propio.
+- `bloqueos`: los lee el dueño del complejo y el admin; el jugador no los necesita, porque la
+  disponibilidad se calcula en el servidor. Se escriben por Route Handler, que además rechaza el
+  bloqueo si choca con una reserva activa.
+- `resenas`: lectura pública. **Sin escritura desde el cliente**: se crean por Route Handler, que
+  valida que la reserva sea del usuario y esté `jugada`, y actualiza `ratingPromedio` y
+  `totalResenas` del complejo en la misma transacción. El ID del documento sigue siendo el de la
+  reserva, así que una segunda reseña falla porque el documento ya existe. (Una versión anterior
+  de este documento permitía crearlas desde el cliente con una rule; no es compatible con
+  actualizar los contadores del complejo, que el cliente no puede escribir.)
+- `notificaciones`: cada usuario lee solo las suyas; solo puede marcar `leida`. Se crean desde el
+  servidor con `notificar()` (`lib/notificaciones/notificar.ts`).
 
 La credencial del Admin SDK va en variables de entorno del servidor. Nunca en el cliente.
