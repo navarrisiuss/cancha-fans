@@ -71,8 +71,8 @@ forma de la petición ni de la respuesta sin avisar a quien los implementa.
 
 | Endpoint | Quién llama | Contrato |
 |---|---|---|
-| `GET /api/disponibilidad?canchaId&fecha=YYYY-MM-DD` | cualquiera | `{ bloques: [{ inicio, fin, estado: "libre" \| "ocupado" }] }`, con `inicio` y `fin` en ISO. Sin caché. |
-| `POST /api/reservas` | jugador con sesión | Body `{ canchaId, inicio, tipoPago }` → `{ reservaId }`. Crea la reserva en `pendiente_pago` dentro de una transacción. |
+| `GET /api/disponibilidad?complejoId&canchaId&fecha=YYYY-MM-DD` | cualquiera | `{ bloques: [{ inicio, fin, estado: "libre" \| "ocupado" }] }`, con `inicio` y `fin` en ISO. Sin caché. |
+| `POST /api/reservas` | jugador con sesión | Body `{ complejoId, canchaId, inicio, tipoPago }` → `{ reservaId }`. Crea la reserva en `pendiente_pago` dentro de una transacción. |
 | `POST /api/pagos/iniciar` | jugador con sesión | Body `{ reservaId }` → `{ url, token }` para redirigir a Webpay (integración). |
 | `GET\|POST /api/pagos/retorno` | Webpay | Confirma o expira la reserva y redirige a `/reservas/{id}/comprobante`. |
 | `POST /api/reservas/{id}/cancelar` | jugador o dueño | Body `{ motivo? }`. El rol se deduce en el servidor; si cancela el dueño, el motivo es obligatorio. |
@@ -84,6 +84,9 @@ forma de la petición ni de la respuesta sin avisar a quien los implementa.
 La autorización de cada endpoint sale de `lib/firebase/`: `exigirUsuario` (sesión iniciada),
 `exigirDuenoDeComplejo` (dueño de ese complejo) y `exigirAdmin`. Desde el navegador se llama con
 `fetchConSesion`, que manda el ID token en la cabecera `Authorization`.
+
+`complejoId` va junto a `canchaId` porque las canchas son una subcolección
+(`complejos/{complejoId}/canchas/{canchaId}`): sin el complejo no se puede ubicar el documento.
 
 El retorno de Webpay debe ser **idempotente**: puede llegar repetido, fuera de orden o por GET
 (cuando el usuario aborta el pago). Guarda el identificador de la transacción y descarta duplicados.
