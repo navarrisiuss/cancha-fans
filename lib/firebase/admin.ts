@@ -15,6 +15,14 @@ function obtenerApp(): App {
   }
 
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  if (process.env.FIRESTORE_EMULATOR_HOST) {
+    if (projectId !== "demo-cancha-fans") {
+      throw new Error("Para usar los emuladores, configura NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cancha-fans.");
+    }
+
+    return initializeApp({ projectId });
+  }
+
   const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
 
