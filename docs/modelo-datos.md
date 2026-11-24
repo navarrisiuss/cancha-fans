@@ -91,6 +91,7 @@ complejos.
 - `complejoId`, `complejoNombre`, `complejoComuna`, `ownerId`
 - `canchaId`, `canchaNombre`, `canchaFormato`
 - `inicio`, `fin` (timestamps)
+- `duracionMin` (número opcional) guarda los minutos reales entre `inicio` y `fin`. Se calcula al crear la reserva. Las reservas antiguas pueden no tenerlo.
 - `precioTotal`, `montoPagado`, `saldoPendiente`
 - `tipoPago`: `total` | `sena`
 - `comision` (6% de `precioTotal`, calculada al confirmar)
