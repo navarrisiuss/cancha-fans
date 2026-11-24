@@ -91,6 +91,46 @@ Algunas cosas que se hacen a mano:
 
 Otros comandos: `npm run build`, `npm run start` y `npm run lint`.
 
+## Probar con emuladores
+
+1. Instala las dependencias con `npm ci`. Usa Node.js 22.18+ o 24 LTS y Java 21 o superior.
+   La versión de Firebase CLI del proyecto requiere Java 21 para iniciar los emuladores.
+2. Ejecuta `npm run emuladores`. La interfaz queda en [http://localhost:4000](http://localhost:4000).
+3. En otra terminal, ejecuta `npm run emuladores:sembrar`. Cada ejecución borra los datos
+   locales de Firestore y las cuentas de Auth del proyecto demo antes de cargar los ejemplos.
+4. Crea `.env.development.local` con estos valores. El bloque «Emuladores (opcional)» de
+   [.env.example](.env.example) también incluye las variables que activan el modo local.
+
+   ```dotenv
+   NEXT_PUBLIC_USAR_EMULADORES=true
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cancha-fans
+   NEXT_PUBLIC_FIREBASE_API_KEY=demo
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-cancha-fans.firebaseapp.com
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=demo-cancha-fans.appspot.com
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=000000000000
+   NEXT_PUBLIC_FIREBASE_APP_ID=1:000000000000:web:0000000000000000000000
+   FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+   FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
+   FIREBASE_STORAGE_EMULATOR_HOST=127.0.0.1:9199
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   RESEND_API_KEY=
+   ```
+
+5. Ejecuta `npm run dev` y abre [http://localhost:3000](http://localhost:3000).
+6. Inicia sesión con una cuenta de prueba. Todas usan la clave `prueba123`.
+
+   | Cuenta | Correo |
+   |---|---|
+   | Jugador | `jugador@prueba.cl` |
+   | Segunda jugadora | `jugador2@prueba.cl` |
+   | Dueña | `dueno@prueba.cl` |
+   | Admin | `admin@prueba.cl` |
+
+Auth, Firestore y Storage usan el proyecto local `demo-cancha-fans`, aislado del Firebase real.
+Deja `RESEND_API_KEY` vacía para que las pruebas solo generen notificaciones dentro de la app.
+La reserva de prueba dentro de la ventana permite cancelar sin costo durante 55 minutos después
+de sembrar. Puedes volver a ejecutar la semilla para recuperar ese escenario.
+
 ## Flujo de trabajo
 
 - La rama principal es `develop`. Cada cambio va en su propia rama (`feat/...`, `docs/...`) y entra

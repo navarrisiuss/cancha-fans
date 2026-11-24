@@ -3,9 +3,9 @@
 import "client-only";
 
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { connectAuthEmulator, getAuth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+import { connectStorageEmulator, getStorage } from "firebase/storage";
 
 // Cada variable se lee de forma literal: Next.js reemplaza `process.env.NEXT_PUBLIC_*` por su
 // valor al compilar, y un acceso dinámico (process.env[nombre]) no llega al navegador.
@@ -17,6 +17,11 @@ const variables = {
   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
+const usarEmuladores = process.env.NEXT_PUBLIC_USAR_EMULADORES === "true";
+
+if (usarEmuladores && variables.NEXT_PUBLIC_FIREBASE_PROJECT_ID !== "demo-cancha-fans") {
+  throw new Error("Para usar los emuladores, configura NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-cancha-fans.");
+}
 
 const faltantes = Object.entries(variables)
   .filter(([, valor]) => !valor)
@@ -45,3 +50,12 @@ const app = getApps().length > 0 ? getApp() : initializeApp(configuracion);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Fast Refresh vuelve a ejecutar este módulo con las mismas instancias de Firebase.
+const entorno = globalThis as typeof globalThis & { emuladoresCanchaFansConectados?: boolean };
+if (usarEmuladores && !entorno.emuladoresCanchaFansConectados) {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectStorageEmulator(storage, "127.0.0.1", 9199);
+  entorno.emuladoresCanchaFansConectados = true;
+}
