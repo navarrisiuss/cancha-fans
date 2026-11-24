@@ -5,8 +5,10 @@ import { Timestamp } from "firebase-admin/firestore";
 import { esIdDeDocumento } from "../../../../lib/disponibilidad";
 import { dbAdmin } from "../../../../lib/firebase/admin";
 import { exigirUsuario, respuestaError } from "../../../../lib/firebase/exigir-usuario";
+import { normalizarRut } from "../../../../lib/rut";
 import type { Reserva } from "../../../../lib/tipos/reserva";
 import { montoACobrar, URL_FORMULARIO_WEBPAY, webpay } from "../../../../lib/webpay";
+import { normalizarTelefono } from "../../../checkout/telefono";
 
 type InicioWebpay = { url: string; token: string };
 
@@ -16,6 +18,20 @@ export async function POST(request: Request) {
 
   const datos = await request.json().catch(() => null) as Record<string, unknown> | null;
   if (!esIdDeDocumento(datos?.reservaId)) return respuestaError(400, "Indica una reserva válida.");
+
+  const nombre = typeof datos.nombre === "string" ? datos.nombre.trim() : "";
+  if (nombre.length < 2 || nombre.length > 80) {
+    return respuestaError(400, "Ingresa un nombre y apellido de 2 a 80 caracteres.");
+  }
+  const rut = typeof datos.rut === "string" ? normalizarRut(datos.rut) : null;
+  if (!rut) return respuestaError(400, "Ingresa un RUT válido.");
+
+  const telefono = typeof datos.telefono === "string" ? normalizarTelefono(datos.telefono) : null;
+  if (!telefono) return respuestaError(400, "Ingresa un número de celular chileno válido.");
+
+  if (datos.aceptaReglas !== true) {
+    return respuestaError(400, "Debes aceptar las reglas del recinto y la política de cancelación.");
+  }
 
   const db = dbAdmin();
   const referencia = db.collection("reservas").doc(datos.reservaId);
@@ -58,6 +74,9 @@ export async function POST(request: Request) {
       tx.update(referencia, {
         webpayToken: inicio.token,
         webpayOrdenCompra: orden,
+        jugadorNombre: nombre,
+        jugadorRut: rut,
+        jugadorTelefono: telefono,
         updatedAt: Timestamp.now(),
       });
 
