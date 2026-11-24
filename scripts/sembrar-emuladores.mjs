@@ -161,6 +161,7 @@ async function sembrar() {
         canchaFormato: canchaPrincipal.formato,
         inicio: Timestamp.fromMillis(inicio),
         fin: Timestamp.fromMillis(inicio + canchaPrincipal.duracionBloqueMin * minutoMs),
+        duracionMin: canchaPrincipal.duracionBloqueMin,
         precioTotal,
         tipoPago,
         montoPagado,

@@ -2,8 +2,6 @@
 // Módulo puro sin dependencias de SDK para importarlo tanto en servidor como en cliente.
 import type { EstadoReserva } from "../../../../lib/tipos/reserva";
 
-export const FECHA_CORTE_METRICAS = "2026-11-24" as const;
-
 export type MetricasMensualesArrendatario = {
   reservasPagadas: number;
   ventas: number;
@@ -25,7 +23,6 @@ export type ReservaHoyArrendatario = {
 
 export type RespuestaMetricasArrendatario = {
   mes: string;
-  fechaCorte: typeof FECHA_CORTE_METRICAS;
-  metricas: MetricasMensualesArrendatario | null;
+  metricas: MetricasMensualesArrendatario;
   reservasHoy: ReservaHoyArrendatario[];
 };

@@ -19,11 +19,10 @@ import {
   instanteEnSantiago,
   ZONA_HORARIA,
 } from "../../../../lib/zona-horaria";
-import {
-  FECHA_CORTE_METRICAS,
-  type MetricasMensualesArrendatario,
-  type ReservaHoyArrendatario,
-  type RespuestaMetricasArrendatario,
+import type {
+  MetricasMensualesArrendatario,
+  ReservaHoyArrendatario,
+  RespuestaMetricasArrendatario,
 } from "./contrato";
 
 const PATRON_MES = /^(\d{4})-(0[1-9]|1[0-2])$/;
@@ -167,79 +166,64 @@ export async function GET(request: Request) {
   }
 
   const db = dbAdmin();
-  const desdeEfectivo =
-    rango.primerDia >= FECHA_CORTE_METRICAS ? rango.primerDia : FECHA_CORTE_METRICAS;
 
   try {
-    if (desdeEfectivo >= rango.primerDiaMesSiguiente) {
-      const reservasHoy = await consultarReservasDeHoy(db, usuario.uid, ahora);
-      const respuestaFueraDeCobertura: RespuestaMetricasArrendatario = {
-        mes,
-        fechaCorte: FECHA_CORTE_METRICAS,
-        metricas: null,
-        reservasHoy,
-      };
-      return Response.json(respuestaFueraDeCobertura, { headers: { "Cache-Control": "no-store" } });
-    }
+    const inicioMes = Timestamp.fromDate(inicioDelDia(rango.primerDia));
+    const finMes = Timestamp.fromDate(inicioDelDia(rango.primerDiaMesSiguiente));
 
-    const inicioPeriodo = Timestamp.fromDate(inicioDelDia(desdeEfectivo));
-    const finPeriodo = Timestamp.fromDate(inicioDelDia(rango.primerDiaMesSiguiente));
-
-    // Ordenar por duracionMin después de inicio excluye las reservas históricas sin ese campo.
-    const agregacionPagadas = db
+    const reservasDelMes = db
       .collection("reservas")
       .where("ownerId", "==", usuario.uid)
-      .where("estado", "==", "pagada")
-      .where("inicio", ">=", inicioPeriodo)
-      .where("inicio", "<", finPeriodo)
-      .orderBy("inicio", "asc")
-      .orderBy("duracionMin", "asc")
-      .aggregate({
-        reservasPagadas: AggregateField.count(),
-        ventas: AggregateField.sum("precioTotal"),
-        cobradoEnLinea: AggregateField.sum("montoPagado"),
-        minutosPagados: AggregateField.sum("duracionMin"),
-      });
+      .where("inicio", ">=", inicioMes)
+      .where("inicio", "<", finMes);
 
-    const agregacionCanceladas = db
-      .collection("reservas")
-      .where("ownerId", "==", usuario.uid)
-      .where("estado", "==", "cancelada")
-      .where("inicio", ">=", inicioPeriodo)
-      .where("inicio", "<", finPeriodo)
-      .orderBy("inicio", "asc")
-      .orderBy("duracionMin", "asc")
-      .aggregate({
-        canceladas: AggregateField.count(),
-      });
+    const pagadasDelMes = reservasDelMes.where("estado", "==", "pagada");
 
-    const [reservasHoy, snapPagadas, snapCanceladas, horariosActivos] = await Promise.all([
-      consultarReservasDeHoy(db, usuario.uid, ahora),
-      agregacionPagadas.get(),
-      agregacionCanceladas.get(),
-      leerHorariosCanchasActivas(db, usuario.uid),
-    ]);
+    // Se separa la suma de duracionMin de los montos financieros para no descartar reservas
+    // antiguas que carecen de duracionMin al calcular conteo, ventas y cobrado en línea.
+    const agregacionFinanzasPagadas = pagadasDelMes.aggregate({
+      reservasPagadas: AggregateField.count(),
+      ventas: AggregateField.sum("precioTotal"),
+      cobradoEnLinea: AggregateField.sum("montoPagado"),
+    });
 
-    const datosPagadas = snapPagadas.data();
+    const agregacionDuracionPagadas = pagadasDelMes.aggregate({
+      minutosPagados: AggregateField.sum("duracionMin"),
+    });
+
+    const agregacionCanceladas = reservasDelMes.where("estado", "==", "cancelada").aggregate({
+      canceladas: AggregateField.count(),
+    });
+
+    const [reservasHoy, snapFinanzas, snapDuracion, snapCanceladas, horariosActivos] =
+      await Promise.all([
+        consultarReservasDeHoy(db, usuario.uid, ahora),
+        agregacionFinanzasPagadas.get(),
+        agregacionDuracionPagadas.get(),
+        agregacionCanceladas.get(),
+        leerHorariosCanchasActivas(db, usuario.uid),
+      ]);
+
+    const datosFinanzas = snapFinanzas.data();
+    const datosDuracion = snapDuracion.data();
     const datosCanceladas = snapCanceladas.data();
-    const minutosPagados = Number(datosPagadas.minutosPagados ?? 0);
+    const minutosPagados = Number(datosDuracion.minutosPagados ?? 0);
     const minutosAbiertos = calcularMinutosAbiertos(
       horariosActivos,
-      desdeEfectivo,
+      rango.primerDia,
       rango.primerDiaMesSiguiente,
     );
 
     const metricas: MetricasMensualesArrendatario = {
-      reservasPagadas: Number(datosPagadas.reservasPagadas ?? 0),
-      ventas: Number(datosPagadas.ventas ?? 0),
-      cobradoEnLinea: Number(datosPagadas.cobradoEnLinea ?? 0),
+      reservasPagadas: Number(datosFinanzas.reservasPagadas ?? 0),
+      ventas: Number(datosFinanzas.ventas ?? 0),
+      cobradoEnLinea: Number(datosFinanzas.cobradoEnLinea ?? 0),
       canceladas: Number(datosCanceladas.canceladas ?? 0),
       ocupacion: minutosAbiertos > 0 ? minutosPagados / minutosAbiertos : null,
     };
 
     const respuesta: RespuestaMetricasArrendatario = {
       mes,
-      fechaCorte: FECHA_CORTE_METRICAS,
       metricas,
       reservasHoy,
     };

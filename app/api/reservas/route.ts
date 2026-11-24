@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       const precioTotal = canchaElegida.precioPorBloque;
       const creadaAt = Timestamp.fromDate(ahora);
       const duracionMin = Math.round((bloque.fin.getTime() - bloque.inicio.getTime()) / 60_000);
-      const reserva: Reserva & { duracionMin: number } = {
+      const reserva: Reserva = {
         codigo,
         jugadorId: usuario.uid,
         jugadorNombre: nombre,

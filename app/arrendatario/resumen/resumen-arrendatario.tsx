@@ -10,10 +10,7 @@ import { fetchConSesion } from "../../../lib/firebase/fetch-con-sesion";
 import { useSesion } from "../../../lib/firebase/use-sesion";
 import type { EstadoReserva } from "../../../lib/tipos/reserva";
 import { formatearHora, hoyEnSantiago } from "../../../lib/zona-horaria";
-import {
-  FECHA_CORTE_METRICAS,
-  type RespuestaMetricasArrendatario,
-} from "../../api/arrendatario/metricas/contrato";
+import type { RespuestaMetricasArrendatario } from "../../api/arrendatario/metricas/contrato";
 
 const ETIQUETAS_ESTADO: Record<EstadoReserva, { texto: string; clases: string }> = {
   pendiente_pago: { texto: "Pendiente de pago", clases: "bg-[#F0EEE9] text-[#4D5D54]" },
@@ -127,10 +124,7 @@ function PanelResumen({ uid }: { uid: string }) {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="text-xs font-medium text-[#627067]">
-          Cobertura desde {FECHA_CORTE_METRICAS}: las cifras mensuales incluyen solo reservas desde esa
-          fecha con duración registrada.
-        </p>
+        <h2 className="text-base font-semibold text-[#12241C]">Métricas del mes</h2>
 
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 text-xs font-semibold text-[#4D5D54]">
@@ -172,69 +166,61 @@ function PanelResumen({ uid }: { uid: string }) {
       ) : (
         <>
           <section aria-label="Métricas del mes" className="space-y-4">
-            {actual.datos.metricas === null ? (
-              <p className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/60 px-5 py-4 text-sm text-[#4D5D54]">
-                Mes fuera de cobertura: las métricas mensuales están disponibles desde {actual.datos.fechaCorte}.
-              </p>
-            ) : (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                  <div className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/45 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#627067]">
-                      Reservas pagadas
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#12241C]">
-                      {actual.datos.metricas.reservasPagadas.toLocaleString("es-CL")}
-                    </p>
-                  </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+              <div className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/45 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#627067]">
+                  Reservas pagadas
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#12241C]">
+                  {actual.datos.metricas.reservasPagadas.toLocaleString("es-CL")}
+                </p>
+              </div>
 
-                  <div className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/45 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#627067]">
-                      Ventas
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#12241C]">
-                      {formatearMonto(actual.datos.metricas.ventas)}
-                    </p>
-                  </div>
+              <div className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/45 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#627067]">
+                  Ventas
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#12241C]">
+                  {formatearMonto(actual.datos.metricas.ventas)}
+                </p>
+              </div>
 
-                  <div className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/45 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#0F7A4D]">
-                      Cobrado en línea
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#0F7A4D]">
-                      {formatearMonto(actual.datos.metricas.cobradoEnLinea)}
-                    </p>
-                  </div>
+              <div className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/45 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#0F7A4D]">
+                  Cobrado en línea
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#0F7A4D]">
+                  {formatearMonto(actual.datos.metricas.cobradoEnLinea)}
+                </p>
+              </div>
 
-                  <div className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/45 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#627067]">
-                      Canceladas
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#12241C]">
-                      {actual.datos.metricas.canceladas.toLocaleString("es-CL")}
-                    </p>
-                  </div>
+              <div className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/45 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#627067]">
+                  Canceladas
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#12241C]">
+                  {actual.datos.metricas.canceladas.toLocaleString("es-CL")}
+                </p>
+              </div>
 
-                  <div className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/45 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#627067]">
-                      Ocupación
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#12241C]">
-                      {actual.datos.metricas.ocupacion === null
-                        ? "Sin horas abiertas"
-                        : formatoPorcentaje.format(actual.datos.metricas.ocupacion)}
-                    </p>
-                  </div>
-                </div>
+              <div className="rounded-2xl border border-[#E7E5DF] bg-[#F0EEE9]/45 p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#627067]">
+                  Ocupación
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#12241C]">
+                  {actual.datos.metricas.ocupacion === null
+                    ? "Sin horas abiertas"
+                    : formatoPorcentaje.format(actual.datos.metricas.ocupacion)}
+                </p>
+              </div>
+            </div>
 
-                {actual.datos.metricas.reservasPagadas === 0 &&
-                  actual.datos.metricas.canceladas === 0 && (
-                    <p className="text-sm text-[#4D5D54]">
-                      Sin reservas registradas dentro de la cobertura en este mes.
-                    </p>
-                  )}
-              </>
-            )}
+            {actual.datos.metricas.reservasPagadas === 0 &&
+              actual.datos.metricas.canceladas === 0 && (
+                <p className="text-sm text-[#4D5D54]">
+                  No registras reservas pagadas ni canceladas en este mes.
+                </p>
+              )}
           </section>
 
           <section aria-labelledby="titulo-reservas-hoy" className="space-y-3 border-t border-[#E7E5DF] pt-6">

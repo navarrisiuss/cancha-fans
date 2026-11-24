@@ -40,6 +40,8 @@ export type Reserva = {
 
   inicio: FechaFirestore;
   fin: FechaFirestore;
+  // Minutos reales entre inicio y fin. Las reservas antiguas pueden no tener este campo.
+  duracionMin?: number;
 
   // CLP, enteros.
   precioTotal: number;
