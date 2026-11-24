@@ -6,8 +6,10 @@ import { exigirUsuario, respuestaError } from "@/lib/firebase/exigir-usuario";
 import { notificar } from "@/lib/notificaciones/notificar";
 import { PORCENTAJE_PENALIZACION_CANCELACION } from "@/lib/reglas";
 import type { QuienCancela, Reserva } from "@/lib/tipos/reserva";
+import { formatearFechaHora } from "@/lib/zona-horaria";
 
 const MAX_MOTIVO = 500;
+const pesos = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" });
 
 export async function POST(request: Request, contexto: RouteContext<"/api/reservas/[id]/cancelar">) {
   const usuario = await exigirUsuario(request);
@@ -81,14 +83,25 @@ export async function POST(request: Request, contexto: RouteContext<"/api/reserv
   const { reserva, canceladaPor, penalizacion } = resultado;
   const canceloJugador = canceladaPor === "jugador";
   const quien = canceloJugador ? "El jugador" : "El arrendatario";
-  const mensaje = `${quien} canceló la reserva ${reserva.codigo} en ${reserva.complejoNombre}.`;
   // El aviso se envía después de confirmar la transacción para evitar duplicarlo en un reintento.
   try {
+    const fechaHora = formatearFechaHora(reserva.inicio.toMillis());
+    let mensaje = `${quien} canceló la reserva ${reserva.codigo} en ${reserva.complejoNombre} · ${reserva.canchaNombre} del ${fechaHora}.`;
+    if (canceloJugador && penalizacion !== null) {
+      mensaje += ` El jugador pierde ${pesos.format(penalizacion)} por cancelar fuera de la ventana.`;
+    }
+    if (!canceloJugador) {
+      mensaje += " Conservas todo tu dinero.";
+    }
+    if (motivo) {
+      mensaje += ` Motivo: ${motivo}`;
+    }
+
     await notificar({
       userId: canceloJugador ? reserva.ownerId : reserva.jugadorId,
       tipo: canceloJugador ? "reserva_cancelada_jugador" : "reserva_cancelada_arrendatario",
       titulo: "Reserva cancelada",
-      mensaje: motivo ? `${mensaje} Motivo: ${motivo}` : mensaje,
+      mensaje,
       enlace: canceloJugador ? "/arrendatario/reservas" : "/mis-reservas",
     });
   } catch (error) {

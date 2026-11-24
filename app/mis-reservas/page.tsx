@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { Encabezado } from "@/components/encabezado";
 import { ListadoMisReservas } from "./listado";
+
+export const metadata: Metadata = { title: "Mis reservas — CanchaFans" };
 
 // La página va en servidor porque solo compone el encabezado y la estructura.
 // El listado usa la sesión y consulta las reservas desde el navegador.
