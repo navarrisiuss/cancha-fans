@@ -46,7 +46,12 @@ export default function Home() {
               <p className="mt-5 max-w-xl text-base leading-7 text-white/75">
                 Publica tus canchas, controla bloqueos y recibe reservas confirmadas desde un solo lugar.
               </p>
-              <button className="mt-8 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-[#0F7A4D]">Quiero publicar mi complejo</button>
+              <Link
+                href="/arrendatario/postular"
+                className="mt-8 inline-block rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-[#0F7A4D]"
+              >
+                Quiero publicar mi complejo
+              </Link>
             </div>
           </div>
         </section>

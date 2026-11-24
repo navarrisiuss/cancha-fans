@@ -2,10 +2,9 @@
 
 // Componente cliente: necesita la sesión de Firebase Auth (useSesion) y el estado y los eventos
 // del formulario. Exige haber iniciado sesión y escribe la postulación directo en Firestore.
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { normalizarRut } from "../../../lib/rut";
+import { formatearRut, normalizarRut } from "../../../lib/rut";
 import { COMUNAS_POR_REGION, REGIONES, type Comuna, type Region } from "../../../lib/comunas";
 import { crearComplejo, MAX_BYTES_FOTO, MAX_FOTOS, TIPOS_FOTO } from "../../../lib/firebase/complejos";
 import type { MensajeError } from "../../../lib/firebase/errores-auth";
@@ -18,7 +17,6 @@ export function FormularioPostular() {
   const [region, setRegion] = useState<Region | "">("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<MensajeError | null>(null);
-  const [enviado, setEnviado] = useState(false);
 
   useEffect(() => {
     if (!cargando && !usuario) {
@@ -63,29 +61,14 @@ export function FormularioPostular() {
         { rut, razonSocial: texto("razonSocial"), datosBancarios: texto("datosBancarios") },
         datos.getAll("fotos").filter((f): f is File => f instanceof File && f.size > 0),
       );
-      setEnviado(true);
+      // replace y no push: así "atrás" no vuelve al formulario ya enviado. El complejo nuevo aparece
+      // "En revisión" en el listado, eso confirma el envío.
+      router.replace("/arrendatario/complejos");
     } catch {
       // Falla de red o de permisos: no hay nada que el usuario corrija, por eso va en carbón.
       setError({ texto: "No pudimos enviar tu postulación. Inténtalo de nuevo en unos minutos.", debeActuar: false });
       setEnviando(false);
     }
-  }
-
-  if (enviado) {
-    return (
-      <div className="flex flex-col gap-4 text-center">
-        <p className="text-lg font-semibold text-[#12241C]">¡Postulación enviada!</p>
-        <p className="text-sm text-[#4D5D54]">
-          Tu complejo quedó en revisión. Te avisaremos cuando un administrador lo apruebe.
-        </p>
-        <Link
-          href="/"
-          className="mt-2 rounded-xl bg-[#0F7A4D] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0B6840]"
-        >
-          Volver al inicio
-        </Link>
-      </div>
-    );
   }
 
   return (
@@ -117,11 +100,14 @@ export function FormularioPostular() {
         etiqueta="RUT"
         nombre="rut"
         placeholder="12.345.678-5"
-        // Marca el campo como inválido mientras el dígito verificador no calce; el navegador lo
-        // avisa al enviar el formulario.
-        alCambiar={(e) =>
-          e.currentTarget.setCustomValidity(normalizarRut(e.currentTarget.value) ? "" : "Ingresa un RUT válido.")
-        }
+        // Formatea con puntos y guion mientras se escribe, y marca el campo como inválido mientras el
+        // dígito verificador no calce; el navegador lo avisa al enviar el formulario.
+        // ponytail: el cursor salta al final si se edita al medio; guardar la posición si molesta.
+        alCambiar={(e) => {
+          const input = e.currentTarget;
+          input.value = formatearRut(input.value);
+          input.setCustomValidity(normalizarRut(input.value) ? "" : "Ingresa un RUT válido.");
+        }}
       />
       <Campo etiqueta="Razón social" nombre="razonSocial" placeholder="Nombre legal de la empresa o persona" />
       <label className="flex flex-col gap-1.5 text-sm font-semibold text-[#12241C]">
