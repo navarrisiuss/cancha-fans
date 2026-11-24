@@ -7,6 +7,7 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { dbAdmin } from "../../../../../lib/firebase/admin";
 import { exigirAdmin } from "../../../../../lib/firebase/exigir-admin";
+import { notificar } from "../../../../../lib/notificaciones/notificar";
 
 const MAX_NOTA = 1000;
 
@@ -41,21 +42,48 @@ export async function POST(request: Request, ctx: RouteContext<"/api/complejos/[
 
   // Transacción: el estado solo cambia si el complejo sigue en revisión. Si dos admins revisan a la
   // vez, el segundo recibe 409 en vez de pisar la decisión del primero. Cuesta 1 lectura y 1 escritura.
-  const estado = await db.runTransaction(async (tx) => {
-    const actual = await tx.get(complejo);
-    if (!actual.exists) return 404;
-    if (actual.get("estado") !== "en_revision") return 409;
-    tx.update(complejo, {
-      estado: decision,
-      notaAdmin: nota,
-      revisadoPor: admin.uid,
-      revisadoAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-    return 200;
-  });
+  const resultado = await db.runTransaction(
+    async (
+      tx,
+    ): Promise<{ codigo: 404 } | { codigo: 409 } | { codigo: 200; ownerId: string; nombre: string }> => {
+      const actual = await tx.get(complejo);
+      if (!actual.exists) return { codigo: 404 };
+      if (actual.get("estado") !== "en_revision") return { codigo: 409 };
+      tx.update(complejo, {
+        estado: decision,
+        notaAdmin: nota,
+        revisadoPor: admin.uid,
+        revisadoAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      return {
+        codigo: 200,
+        ownerId: String(actual.get("ownerId") ?? ""),
+        nombre: String(actual.get("nombre") ?? "tu complejo"),
+      };
+    },
+  );
 
-  if (estado === 404) return responder(404, { error: "El complejo no existe." });
-  if (estado === 409) return responder(409, { error: "Este complejo ya fue revisado por otro administrador." });
+  if (resultado.codigo === 404) return responder(404, { error: "El complejo no existe." });
+  if (resultado.codigo === 409) {
+    return responder(409, { error: "Este complejo ya fue revisado por otro administrador." });
+  }
+
+  if (resultado.ownerId) {
+    await notificar({
+      userId: resultado.ownerId,
+      tipo: decision === "aprobado" ? "complejo_aprobado" : "complejo_rechazado",
+      titulo:
+        decision === "aprobado"
+          ? "Tu complejo fue aprobado"
+          : "Tu postulación de complejo fue rechazada",
+      mensaje:
+        decision === "aprobado"
+          ? `El complejo "${resultado.nombre}" fue aprobado y ya puede recibir reservas en CanchaFans.`
+          : `La postulación del complejo "${resultado.nombre}" fue rechazada en la revisión.`,
+      enlace: "/arrendatario/complejos",
+    });
+  }
+
   return responder(200, { estado: decision });
 }
