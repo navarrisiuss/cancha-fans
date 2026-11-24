@@ -66,17 +66,43 @@ todos sus hijos.
 
 Toda escritura de reservas pasa por el servidor, nunca desde el cliente directo a Firestore.
 
-Endpoints previstos:
+Endpoints y sus contratos. Cada uno lo implementa una sola rama; quien los consume no cambia la
+forma de la petición ni de la respuesta sin avisar a quien los implementa.
 
-- `GET /api/disponibilidad` — bloques libres de una cancha en una fecha
-- `POST /api/reservas` — crea reserva en estado `pendiente_pago` dentro de transacción
-- `POST /api/pagos/iniciar` — abre la transacción de Webpay (integración)
-- `POST /api/pagos/retorno` — recibe el resultado y confirma o expira la reserva
-- `POST /api/reservas/{id}/cancelar` — valida ventana y quién cancela
-- `POST /api/complejos/{id}/revisar` — aprobar o rechazar, solo admin
+| Endpoint | Quién llama | Contrato |
+|---|---|---|
+| `GET /api/disponibilidad?canchaId&fecha=YYYY-MM-DD` | cualquiera | `{ bloques: [{ inicio, fin, estado: "libre" \| "ocupado" }] }`, con `inicio` y `fin` en ISO. Sin caché. |
+| `POST /api/reservas` | jugador con sesión | Body `{ canchaId, inicio, tipoPago }` → `{ reservaId }`. Crea la reserva en `pendiente_pago` dentro de una transacción. |
+| `POST /api/pagos/iniciar` | jugador con sesión | Body `{ reservaId }` → `{ url, token }` para redirigir a Webpay (integración). |
+| `GET\|POST /api/pagos/retorno` | Webpay | Confirma o expira la reserva y redirige a `/reservas/{id}/comprobante`. |
+| `POST /api/reservas/{id}/cancelar` | jugador o dueño | Body `{ motivo? }`. El rol se deduce en el servidor; si cancela el dueño, el motivo es obligatorio. |
+| `POST /api/resenas` | jugador con sesión | Crea la reseña de una reserva jugada y actualiza el rating del complejo en la misma transacción. |
+| `POST` y `DELETE /api/bloqueos` | dueño del complejo | Crea o quita un bloqueo; rechaza si choca con una reserva activa. |
+| `POST /api/complejos/{id}/canchas` y `PATCH …/canchas/{canchaId}` | dueño del complejo | Crean y editan canchas, incluido activar y desactivar; mantienen `formatosDisponibles` en el mismo batch. |
+| `POST /api/complejos/{id}/revisar` | admin | Aprobar o rechazar un complejo. |
 
-El retorno de Webpay debe ser **idempotente**: puede llegar repetido o fuera de orden. Guarda el
-identificador de la transacción y descarta duplicados.
+La autorización de cada endpoint sale de `lib/firebase/`: `exigirUsuario` (sesión iniciada),
+`exigirDuenoDeComplejo` (dueño de ese complejo) y `exigirAdmin`. Desde el navegador se llama con
+`fetchConSesion`, que manda el ID token en la cabecera `Authorization`.
+
+El retorno de Webpay debe ser **idempotente**: puede llegar repetido, fuera de orden o por GET
+(cuando el usuario aborta el pago). Guarda el identificador de la transacción y descarta duplicados.
+
+### Puntos de integración entre ramas
+
+Cuando el código de una rama usa el de otra, el archivo existe desde antes como stub con la firma
+final. Quien lo consume ya lo llama; quien lo implementa solo lo rellena:
+
+| Archivo | Lo consume | Lo implementa |
+|---|---|---|
+| `lib/notificaciones/notificar.ts` | reservas, cancelaciones, revisión de complejos | `feat/notificaciones-y-correo` |
+| `components/notificaciones/campanita.tsx` | `components/encabezado.tsx` y la landing | `feat/notificaciones-y-correo` |
+| `components/reservas/seccion-reserva.tsx` | la ficha del complejo | `feat/reserva-y-pago` |
+
+Los archivos compartidos (`package.json`, `firestore.rules`, `storage.rules`, `docs/`,
+`.env.example`, `lib/reglas.ts`, `lib/tipos/`, `lib/zona-horaria.ts`, `lib/reservas-estado.ts`,
+`components/encabezado.tsx`) los modifica una sola persona, vía una PR aparte. Cada rama de
+funcionalidad es dueña de sus propias carpetas y no toca las de otra.
 
 ## Estructura de carpetas propuesta
 
@@ -97,6 +123,12 @@ lib/
   reglas.ts          constantes de negocio (3 h, 1 h, 30%, 6%)
 content/             markdown de páginas estáticas
 ```
+
+Las rutas reales son planas (`app/arrendatario/...`, `app/admin/...`), no usan route groups; la
+estructura de arriba es una referencia de qué va dónde.
+
+`lib/tipos/` guarda los tipos de las colecciones (sin dependencia de ningún SDK, para importarlos
+desde servidor y cliente) y `lib/zona-horaria.ts` las fechas en America/Santiago.
 
 `lib/reglas.ts` centraliza las constantes de negocio. No las repartas por el código: si mañana la
 anticipación mínima cambia, debe cambiarse en un solo lugar.

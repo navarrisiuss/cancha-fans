@@ -9,12 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@date-fns/tz": "^1.5.0",
     "@radix-ui/react-dialog": "^1.3.1",
+    "date-fns": "^4.4.0",
     "firebase": "^13.0.0",
     "firebase-admin": "^14.5.0",
     "next": "16.3.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "react-markdown": "^10.1.0",
+    "resend": "^6.39.0",
+    "transbank-sdk": "^6.1.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

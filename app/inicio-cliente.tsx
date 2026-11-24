@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../lib/firebase/client";
 import { useSesion } from "../lib/firebase/use-sesion";
+import { Campanita } from "../components/notificaciones/campanita";
 import { Icono, Logo } from "./componentes-ui";
 
 const fotoHero = "https://images.unsplash.com/photo-1740024023028-1efcfa9bb8de?auto=format&fit=crop&w=1200&q=85";
@@ -39,9 +40,13 @@ export function InicioInteractivo() {
           {!cargando && usuario && (
             <div className="hidden items-center gap-3 md:flex">
               <span className="px-2 text-sm font-semibold text-white/80">Hola, {nombreSaludo}</span>
+              <Link href="/mis-reservas" className="px-2 text-sm font-semibold text-white transition-opacity hover:opacity-70">
+                Mis reservas
+              </Link>
               <Link href="/arrendatario/complejos" className="px-2 text-sm font-semibold text-white transition-opacity hover:opacity-70">
                 Mis complejos
               </Link>
+              <Campanita claro />
               <button
                 type="button"
                 onClick={cerrarSesion}
@@ -78,6 +83,9 @@ export function InicioInteractivo() {
               {!cargando && usuario && (
                 <>
                   <span className="text-white/80">Hola, {nombreSaludo}</span>
+                  <Link href="/mis-reservas" onClick={() => setMenuAbierto(false)}>
+                    Mis reservas
+                  </Link>
                   <Link href="/arrendatario/complejos" onClick={() => setMenuAbierto(false)}>
                     Mis complejos
                   </Link>

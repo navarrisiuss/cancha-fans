@@ -77,6 +77,64 @@ service cloud.firestore {
 
         allow update, delete: if false;
       }
+
+      // Lectura pública solo si el complejo está aprobado; el dueño y el admin leen siempre. Sin
+      // escritura desde el cliente: cada cambio de una cancha también actualiza formatosDisponibles
+      // del complejo, y eso lo hace un Route Handler con el Admin SDK, que se salta estas rules.
+      match /canchas/{canchaId} {
+        allow read: if get(/databases/$(database)/documents/complejos/$(complejoId)).data.estado == 'aprobado'
+          || (request.auth != null
+              && get(/databases/$(database)/documents/complejos/$(complejoId)).data.ownerId
+                   == request.auth.uid)
+          || esAdmin();
+
+        allow write: if false;
+      }
+    }
+
+    // Lo lee el jugador que reservó, el dueño del complejo y el admin. Nadie escribe desde el
+    // cliente: crear la reserva, pagarla y cancelarla pasan siempre por Route Handlers con el
+    // Admin SDK. Las consultas del cliente deben filtrar por jugadorId u ownerId igual al uid
+    // propio, si no la rule las rechaza.
+    match /reservas/{reservaId} {
+      allow read: if request.auth != null
+        && (resource.data.jugadorId == request.auth.uid
+            || resource.data.ownerId == request.auth.uid
+            || esAdmin());
+
+      allow write: if false;
+    }
+
+    // Bloqueos manuales: solo los ve su dueño (y el admin). La disponibilidad los cruza en el
+    // servidor, así que el jugador nunca necesita leerlos. Se escriben por Route Handler, que
+    // además rechaza el bloqueo si choca con una reserva activa.
+    match /bloqueos/{bloqueoId} {
+      allow read: if request.auth != null
+        && (resource.data.ownerId == request.auth.uid || esAdmin());
+
+      allow write: if false;
+    }
+
+    // Las reseñas se muestran en la ficha pública, así que se leen sin sesión. Se crean por Route
+    // Handler: la misma transacción actualiza ratingPromedio y totalResenas del complejo, y esos
+    // campos no se pueden escribir desde el cliente. Sin edición ni borrado.
+    match /resenas/{resenaId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Cada usuario lee solo las suyas y solo puede marcarlas como leídas. Se crean únicamente desde
+    // el servidor, en la misma operación que las origina. Las consultas del cliente (lista y
+    // count() de no leídas) deben filtrar por userId igual al uid propio.
+    match /notificaciones/{notificacionId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leida'])
+        && request.resource.data.leida is bool;
+
+      allow create, delete: if false;
     }
   }
 }

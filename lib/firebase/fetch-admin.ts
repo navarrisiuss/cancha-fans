@@ -1,15 +1,5 @@
-// fetch a los endpoints de admin con el ID token de la sesión en la cabecera Authorization, que es
-// lo que valida exigirAdmin en el servidor. Solo en el navegador: el token vive en Firebase Auth.
-// Se usa dentro de /admin, donde el guard ya confirmó la sesión; sin sesión el servidor responde 401.
+// fetch a los endpoints de admin. Es el mismo fetchConSesion (el servidor es quien decide si el
+// usuario es admin, con exigirAdmin); se conserva el nombre para no tocar los componentes de /admin.
 import "client-only";
 
-import { auth } from "./client";
-
-export async function fetchAdmin(url: string, init: RequestInit = {}): Promise<Response> {
-  const token = await auth.currentUser?.getIdToken();
-  return fetch(url, {
-    ...init,
-    cache: "no-store",
-    headers: { ...init.headers, Authorization: `Bearer ${token ?? ""}` },
-  });
-}
+export { fetchConSesion as fetchAdmin } from "./fetch-con-sesion";
