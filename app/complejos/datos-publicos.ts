@@ -25,14 +25,14 @@ function complejosAprobados() {
 
 const TOPE_LISTADO_GENERAL = 24;
 
-// searchParams vuelve dinámica la página. Cacheamos la consulta por comuna durante cinco minutos
-// para reutilizarla al cambiar fecha, hora o formato. Sin comuna se leen hasta 24 documentos.
+// La caché usa la comuna y el tope de los argumentos como parte de la clave por cinco minutos.
+// Con comuna se leen los aprobados de esa comuna. Sin comuna se leen hasta 24 o 50 documentos.
 export const buscarComplejosAprobados = unstable_cache(
-  async (comuna: Comuna | null) => {
+  async (comuna: Comuna | null, tope = TOPE_LISTADO_GENERAL) => {
     const aprobados = complejosAprobados();
     const consulta = comuna
       ? aprobados.where("comuna", "==", comuna)
-      : aprobados.limit(TOPE_LISTADO_GENERAL);
+      : aprobados.limit(tope);
     const { docs } = await consulta.get();
     return docs.map(resumirComplejo);
   },
