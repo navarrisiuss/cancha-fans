@@ -160,7 +160,7 @@ export function InicioInteractivo({
               <label className="flex min-h-[76px] cursor-text items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-[#F0EEE9]/70 xl:px-3">
                 <Icono nombre="search" className="h-5 w-5 shrink-0 text-[#0F7A4D]" />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-xs font-semibold text-[#627067]">Nombre del complejo (opcional)</span>
+                  <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#627067]">Complejo</span>
                   <input
                     name="q"
                     type="text"
