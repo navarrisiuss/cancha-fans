@@ -1,19 +1,30 @@
+// Página de servidor: lee los destacados con el Admin SDK y entrega solo datos públicos
+// serializables al componente que maneja la sesión y el formulario.
+import "server-only";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "./componentes-ui";
 import { InicioInteractivo } from "./inicio-cliente";
 import { PORCENTAJE_SENA } from "../lib/reglas";
+import { hoyEnSantiago } from "../lib/zona-horaria";
+import { listarComplejosDestacados } from "./complejos/datos-publicos";
 
 export const metadata: Metadata = {
   title: "CanchaFans — Reserva canchas de fútbol en Chile",
   description: "Busca canchas F5, F7 y F11 por comuna, reserva tu horario y paga en línea.",
 };
 
-export default function Home() {
+// ISR conserva la página estática entre visitas y vuelve a consultar Firestore
+// al regenerarla bajo demanda, como máximo una vez cada cinco minutos.
+export const revalidate = 300;
+
+export default async function Inicio() {
+  const destacados = await listarComplejosDestacados();
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#F0EEE9] text-[#12241C]">
       <main>
-        <InicioInteractivo />
+        <InicioInteractivo destacados={destacados} fechaInicial={hoyEnSantiago()} />
 
         <section id="funciona" className="bg-white py-24">
           <div className="mx-auto max-w-[1240px] px-5 lg:px-8">

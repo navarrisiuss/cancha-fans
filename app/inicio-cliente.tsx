@@ -1,25 +1,44 @@
 "use client";
 
+// Componente cliente: usa la sesión de Firebase, controla el menú y actualiza
+// la fecha del formulario cuando se hidrata una versión estática de la landing.
+import Form from "next/form";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../lib/firebase/client";
 import { useSesion } from "../lib/firebase/use-sesion";
 import { Campanita } from "../components/notificaciones/campanita";
 import { Icono, Logo } from "./componentes-ui";
+import { COMUNAS_POR_REGION, REGIONES } from "../lib/comunas";
+import { FORMATOS } from "../lib/tipos/cancha";
+import { hoyEnSantiago } from "../lib/zona-horaria";
+import { TarjetaComplejo, type ResumenPublicoComplejo } from "./complejos/tarjeta-complejo";
 
 const fotoHero = "https://images.unsplash.com/photo-1740024023028-1efcfa9bb8de?auto=format&fit=crop&w=1200&q=85";
 
-export function InicioInteractivo() {
-  const [comuna, setComuna] = useState("Todas las comunas");
-  const [formato, setFormato] = useState("Todos");
+export function InicioInteractivo({
+  destacados,
+  fechaInicial,
+}: {
+  destacados: ResumenPublicoComplejo[];
+  fechaInicial: string;
+}) {
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const hoy = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const campoFecha = useRef<HTMLInputElement>(null);
   const { usuario, cargando } = useSesion();
   // Primer nombre para el saludo; si la cuenta no tiene nombre, se usa el correo.
   const nombreSaludo = usuario?.displayName?.trim().split(/\s+/)[0] || usuario?.email || "";
 
-  const irAlListado = () => document.getElementById("complejos")?.scrollIntoView({ behavior: "smooth" });
+  useEffect(() => {
+    const campo = campoFecha.current;
+    if (!campo) return;
+    const hoy = hoyEnSantiago();
+    const conservaValorInicial = campo.value === campo.defaultValue;
+    campo.min = hoy;
+    campo.defaultValue = hoy;
+    if (conservaValorInicial) campo.value = hoy;
+  }, [fechaInicial]);
 
   // signOut borra la sesión guardada en el navegador; useSesion se entera solo y el header vuelve
   // a mostrar "Iniciar sesión".
@@ -118,6 +137,7 @@ export function InicioInteractivo() {
       </header>
 
       <section className="relative min-h-[720px] bg-[#12241C]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="absolute inset-0 h-full w-full object-cover object-center opacity-55"
           src={fotoHero}
@@ -134,18 +154,22 @@ export function InicioInteractivo() {
             </p>
           </div>
 
-          <div className="absolute -bottom-[98px] left-5 right-5 rounded-[24px] bg-white p-3 shadow-[0_24px_70px_rgba(18,36,28,0.18)] lg:left-8 lg:right-8 lg:p-4">
-            <div className="grid gap-2 lg:grid-cols-[1.25fr_1fr_1fr_.8fr_auto]">
+          <Form action="/buscar" id="buscar" className="mt-10 scroll-mt-8 rounded-[24px] bg-white p-3 shadow-[0_24px_70px_rgba(18,36,28,0.18)] lg:absolute lg:-bottom-12 lg:left-8 lg:right-8 lg:mt-0 lg:p-4">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr_.8fr_auto]">
               <label className="group flex min-h-[76px] cursor-pointer items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-[#F0EEE9]/70">
                 <Icono nombre="pin" className="h-5 w-5 shrink-0 text-[#0F7A4D]" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#627067]">Comuna</span>
                   <select
-                    value={comuna}
-                    onChange={(e) => setComuna(e.target.value)}
+                    name="comuna"
                     className="mt-1 w-full appearance-none bg-transparent text-sm font-semibold outline-none"
                   >
-                    <option>Todas las comunas</option>
+                    <option value="">Todas las comunas</option>
+                    {REGIONES.map((region) => (
+                      <optgroup key={region} label={region}>
+                        {COMUNAS_POR_REGION[region].map((comuna) => <option key={comuna}>{comuna}</option>)}
+                      </optgroup>
+                    ))}
                   </select>
                 </span>
                 <Icono nombre="chevron" className="h-4 w-4 rotate-90" />
@@ -154,57 +178,68 @@ export function InicioInteractivo() {
                 <Icono nombre="calendar" className="h-5 w-5 shrink-0 text-[#0F7A4D]" />
                 <span className="min-w-0">
                   <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#627067]">Fecha</span>
-                  <input className="mt-1 w-full bg-transparent text-sm font-semibold outline-none" type="date" min={hoy} defaultValue={hoy} />
+                  <input
+                    ref={campoFecha}
+                    name="fecha"
+                    type="date"
+                    min={fechaInicial}
+                    defaultValue={fechaInicial}
+                    className="mt-1 w-full bg-transparent text-sm font-semibold outline-none"
+                  />
                 </span>
               </label>
               <label className="flex min-h-[76px] cursor-pointer items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-[#F0EEE9]/70">
                 <Icono nombre="clock" className="h-5 w-5 shrink-0 text-[#0F7A4D]" />
                 <span>
                   <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#627067]">Desde</span>
-                  <input className="mt-1 w-full bg-transparent text-sm font-semibold outline-none" type="time" defaultValue="19:00" />
+                  <input className="mt-1 w-full bg-transparent text-sm font-semibold outline-none" name="hora" type="time" defaultValue="19:00" />
                 </span>
               </label>
               <label className="flex min-h-[76px] cursor-pointer items-center gap-3 rounded-2xl px-4 transition-colors hover:bg-[#F0EEE9]/70">
                 <span className="min-w-0 flex-1">
                   <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-[#627067]">Formato</span>
                   <select
-                    value={formato}
-                    onChange={(e) => setFormato(e.target.value)}
+                    name="formato"
                     className="mt-1 w-full appearance-none bg-transparent text-sm font-semibold outline-none"
                   >
-                    <option>Todos</option>
-                    <option>F5</option>
-                    <option>F7</option>
-                    <option>F11</option>
+                    <option value="">Todos</option>
+                    {FORMATOS.map((formato) => <option key={formato}>{formato}</option>)}
                   </select>
                 </span>
                 <Icono nombre="chevron" className="h-4 w-4 rotate-90" />
               </label>
               <button
-                onClick={irAlListado}
-                className="flex min-h-[76px] items-center justify-center gap-2 rounded-2xl bg-[#0F7A4D] px-7 text-sm font-semibold text-white transition-colors hover:bg-[#0B6840]"
+                type="submit"
+                className="flex min-h-[76px] sm:col-span-2 lg:col-span-1 items-center justify-center gap-2 rounded-2xl bg-[#0F7A4D] px-7 text-sm font-semibold text-white transition-colors hover:bg-[#0B6840]"
               >
                 <Icono nombre="search" className="h-5 w-5" />
                 Buscar
               </button>
             </div>
-          </div>
+          </Form>
         </div>
       </section>
 
-      <section id="complejos" className="mx-auto max-w-[1240px] px-5 pb-24 pt-44 lg:px-8">
+      <section id="complejos" className="mx-auto max-w-[1240px] px-5 pb-24 pt-16 lg:px-8 lg:pt-28">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#0F7A4D]">Juega esta semana</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-[-0.035em] sm:text-[42px]">Canchas destacadas</h2>
-          <p className="mt-2 text-[#627067]">Complejos aprobados con horarios para reservar.</p>
         </div>
 
-        <div className="mt-10 rounded-[24px] border border-[#DAD7CF] bg-white p-12 text-center">
-          <h3 className="text-xl font-semibold">Todavía no hay complejos publicados</h3>
-          <p className="mt-2 text-sm text-[#627067]">
-            En cuanto un arrendatario publique su complejo y el admin lo apruebe, va a aparecer acá.
-          </p>
-        </div>
+        {destacados.length === 0 ? (
+          <div className="mt-10 rounded-[24px] border border-[#DAD7CF] bg-white p-12 text-center">
+            <h3 className="text-xl font-semibold">Todavía no hay complejos publicados</h3>
+            <p className="mt-2 text-sm text-[#627067]">
+              En cuanto un arrendatario publique su complejo y el admin lo apruebe, va a aparecer acá.
+            </p>
+          </div>
+        ) : (
+          <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {destacados.map((complejo) => (
+              <li key={complejo.id}><TarjetaComplejo complejo={complejo} /></li>
+            ))}
+          </ul>
+        )}
       </section>
     </>
   );
