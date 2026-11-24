@@ -1,12 +1,20 @@
 import "server-only";
 
+import { TZDate } from "@date-fns/tz";
 import { Timestamp, type Firestore } from "firebase-admin/firestore";
 import { ANTICIPACION_MINIMA_MS } from "./reglas";
 import { ocupaElBloque } from "./reservas-estado";
 import type { Bloqueo } from "./tipos/bloqueo";
 import type { Cancha } from "./tipos/cancha";
 import type { Reserva } from "./tipos/reserva";
-import { diaDeLaSemana, inicioDelDia, inicioDelDiaSiguiente, instanteEnSantiago } from "./zona-horaria";
+import {
+  diaDeLaSemana,
+  hoyEnSantiago,
+  inicioDelDia,
+  inicioDelDiaSiguiente,
+  instanteEnSantiago,
+  ZONA_HORARIA,
+} from "./zona-horaria";
 
 type Intervalo = Pick<Bloqueo, "inicio" | "fin">;
 type ReservaDelDia = Pick<Reserva, "inicio" | "fin" | "estado" | "expiraAt">;
@@ -16,6 +24,8 @@ export type BloqueDisponible = {
   fin: string;
   estado: "libre" | "ocupado";
 };
+
+export type DiaDisponible = { fecha: string; bloques: BloqueDisponible[] };
 
 type Bloque = Omit<BloqueDisponible, "inicio" | "fin"> & { inicio: Date; fin: Date };
 
@@ -59,24 +69,34 @@ export function esIdDeDocumento(valor: unknown): valor is string {
 }
 
 export function consultasDelDia(db: Firestore, canchaId: string, fecha: string) {
-  const inicio = Timestamp.fromDate(inicioDelDia(fecha));
-  const fin = Timestamp.fromDate(inicioDelDiaSiguiente(fecha));
+  return consultasDeRango(db, canchaId, fecha, 1);
+}
+
+function sumarDias(fecha: string, dias: number): string {
+  const [anio, mes, dia] = fecha.split("-").map(Number);
+  // El mediodía evita las transiciones de medianoche al avanzar por fechas del calendario.
+  return hoyEnSantiago(new TZDate(anio, mes - 1, dia + dias, 12, ZONA_HORARIA));
+}
+
+export function consultasDeRango(db: Firestore, canchaId: string, desde: string, dias: number) {
+  const inicio = Timestamp.fromDate(inicioDelDia(desde));
+  const fin = Timestamp.fromDate(inicioDelDia(sumarDias(desde, dias)));
 
   return {
-    // Solo las reservas de una cancha en un día, incluidas las expiradas y canceladas.
+    // Reservas de una sola cancha en el rango, incluidas las expiradas y canceladas.
     reservas: db.collection("reservas")
       .where("canchaId", "==", canchaId)
       .where("inicio", ">=", inicio)
       .where("inicio", "<", fin),
-    // Un bloqueo vigente al inicio del día puede empezar antes o terminar después.
-    // Se leen los bloqueos de la cancha con fin posterior, incluidos los de fechas futuras.
+    // Bloqueos de una sola cancha con fin posterior al inicio. Incluye los que cruzan ese
+    // límite y los futuros, que se descartan en memoria cuando quedan fuera del rango.
     bloqueos: db.collection("bloqueos")
       .where("canchaId", "==", canchaId)
       .where("fin", ">", inicio),
   };
 }
 
-export async function leerDisponibilidad(db: Firestore, complejoId: string, canchaId: string, fecha: string) {
+async function leerCanchaDisponible(db: Firestore, complejoId: string, canchaId: string) {
   const complejo = db.collection("complejos").doc(complejoId);
   // Dos documentos como máximo antes de consultar las excepciones.
   const [datosComplejo, datosCancha] = await Promise.all([
@@ -85,6 +105,12 @@ export async function leerDisponibilidad(db: Firestore, complejoId: string, canc
   ]);
   const cancha = datosCancha.data() as Cancha | undefined;
   if (datosComplejo.get("estado") !== "aprobado" || cancha?.activa !== true) return null;
+  return cancha;
+}
+
+export async function leerDisponibilidad(db: Firestore, complejoId: string, canchaId: string, fecha: string) {
+  const cancha = await leerCanchaDisponible(db, complejoId, canchaId);
+  if (!cancha) return null;
   if (!cancha.horarioAtencion[diaDeLaSemana(fecha)]) return [];
 
   const consultas = consultasDelDia(db, canchaId, fecha);
@@ -97,4 +123,25 @@ export async function leerDisponibilidad(db: Firestore, complejoId: string, canc
     bloqueos.docs.map((doc) => doc.data() as Bloqueo).filter((bloqueo) => bloqueo.complejoId === complejoId),
     new Date(),
   );
+}
+
+export async function leerDisponibilidadSemana(db: Firestore, complejoId: string, canchaId: string, desde: string) {
+  const cancha = await leerCanchaDisponible(db, complejoId, canchaId);
+  if (!cancha) return null;
+
+  const dias = 7;
+  const consultas = consultasDeRango(db, canchaId, desde, dias);
+  const [reservas, bloqueos] = await Promise.all([consultas.reservas.get(), consultas.bloqueos.get()]);
+  const fin = inicioDelDia(sumarDias(desde, dias)).getTime();
+  const reservasDelRango = reservas.docs.map((doc) => doc.data() as Reserva)
+    .filter((reserva) => reserva.complejoId === complejoId);
+  const bloqueosDelRango = bloqueos.docs.map((doc) => doc.data() as Bloqueo)
+    .filter((bloqueo) => bloqueo.complejoId === complejoId && bloqueo.inicio.toMillis() < fin);
+  const ahora = new Date();
+
+  return Array.from({ length: dias }, (_, indice) => {
+    const fecha = sumarDias(desde, indice);
+    const bloques = calcularBloques(cancha, fecha, reservasDelRango, bloqueosDelRango, ahora);
+    return { fecha, bloques };
+  });
 }
