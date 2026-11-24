@@ -2,7 +2,6 @@
 // Firebase (que vive en el navegador), así que es un componente cliente aparte.
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Logo } from "../../componentes-ui";
 import { ListadoMisComplejos } from "./listado";
 
 export const metadata: Metadata = {
@@ -13,9 +12,6 @@ export const metadata: Metadata = {
 export default function MisComplejos() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F0EEE9] px-5 py-12">
-      <Link href="/" aria-label="CanchaFans, inicio" className="mb-8">
-        <Logo />
-      </Link>
       <div className="w-full max-w-[560px] rounded-[24px] bg-white p-8 shadow-[0_8px_30px_rgba(18,36,28,0.06)]">
         <div className="flex items-start justify-between gap-4">
           <div>

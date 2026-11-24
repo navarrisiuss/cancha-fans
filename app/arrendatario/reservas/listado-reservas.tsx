@@ -54,6 +54,9 @@ export function ListadoReservasRecibidas() {
         );
         if (cancelado) return;
 
+        // Primero las próximas en orden ascendente (la más cercana arriba) y luego las pasadas en
+        // orden descendente (de la más reciente a la más antigua).
+        const ahoraMs = Date.now();
         const lista: ReservaConId[] = snap.docs
           .map((d) => {
             const datos = d.data();
@@ -90,7 +93,17 @@ export function ListadoReservasRecibidas() {
               updatedAt: datos.updatedAt,
             };
           })
-          .sort((a, b) => b.inicio.toMillis() - a.inicio.toMillis());
+          .sort((a, b) => {
+            const aProxima = a.fin.toMillis() > ahoraMs;
+            const bProxima = b.fin.toMillis() > ahoraMs;
+            if (aProxima && bProxima) {
+              return a.inicio.toMillis() - b.inicio.toMillis();
+            }
+            if (aProxima !== bProxima) {
+              return aProxima ? -1 : 1;
+            }
+            return b.inicio.toMillis() - a.inicio.toMillis();
+          });
 
         setReservas(lista);
       } catch {
