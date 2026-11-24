@@ -64,14 +64,19 @@ export function ListadoMisComplejos() {
   return (
     <ul className="flex flex-col gap-3">
       {complejos.map((c) => (
-        <li key={c.id} className="flex items-center justify-between gap-4 rounded-2xl border border-[#DAD7CF] px-5 py-4">
-          <div className="min-w-0">
-            <p className="truncate font-semibold text-[#12241C]">{c.nombre}</p>
-            <p className="text-sm font-medium text-[#627067]">{c.comuna}</p>
-          </div>
-          <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${ESTADOS[c.estado].clases}`}>
-            {ESTADOS[c.estado].texto}
-          </span>
+        <li key={c.id}>
+          <Link
+            href={`/arrendatario/complejos/${c.id}`}
+            className="flex items-center justify-between gap-4 rounded-2xl border border-[#DAD7CF] px-5 py-4 transition-colors hover:border-[#0F7A4D]"
+          >
+            <div className="min-w-0">
+              <p className="truncate font-semibold text-[#12241C]">{c.nombre}</p>
+              <p className="text-sm font-medium text-[#627067]">{c.comuna} · Gestionar canchas</p>
+            </div>
+            <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${ESTADOS[c.estado].clases}`}>
+              {ESTADOS[c.estado].texto}
+            </span>
+          </Link>
         </li>
       ))}
     </ul>
