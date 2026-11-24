@@ -15,6 +15,9 @@ export default function LayoutArrendatario({ children }: LayoutProps<"/arrendata
           aria-label="Panel del arrendatario"
           className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-2 px-5 py-2.5 lg:px-8"
         >
+          <Link href="/arrendatario/resumen" className={enlaceNav}>
+            Resumen
+          </Link>
           <Link href="/arrendatario/complejos" className={enlaceNav}>
             Mis complejos
           </Link>

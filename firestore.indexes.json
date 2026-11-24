@@ -44,6 +44,28 @@
       ]
     },
     {
+      "collectionGroup": "reservas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ownerId", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" },
+        { "fieldPath": "inicio", "order": "ASCENDING" },
+        { "fieldPath": "duracionMin", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "reservas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ownerId", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" },
+        { "fieldPath": "inicio", "order": "ASCENDING" },
+        { "fieldPath": "duracionMin", "order": "ASCENDING" },
+        { "fieldPath": "montoPagado", "order": "ASCENDING" },
+        { "fieldPath": "precioTotal", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "bloqueos",
       "queryScope": "COLLECTION",
       "fields": [
