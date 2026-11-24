@@ -37,10 +37,6 @@ export async function POST(request: Request) {
       }
 
       const cabeceras = { "Cache-Control": "no-store" };
-      if (reserva.webpayToken && reserva.webpayOrdenCompra) {
-        return Response.json({ url: URL_FORMULARIO_WEBPAY, token: reserva.webpayToken }, { headers: cabeceras });
-      }
-
       const monto = montoACobrar(reserva);
       if (!Number.isSafeInteger(monto) || monto <= 0) {
         return respuestaError(409, "El monto de la reserva no es válido para Webpay.");
@@ -48,8 +44,9 @@ export async function POST(request: Request) {
 
       // Si Firestore reintenta el callback, se conserva la respuesta obtenida de Webpay.
       if (!inicio) {
-        const retorno = new URL("/api/pagos/retorno", process.env.NEXT_PUBLIC_APP_URL).href;
-        inicio = await webpay.create(orden, referencia.id, monto, retorno) as InicioWebpay;
+        const retorno = new URL("/api/pagos/retorno", process.env.NEXT_PUBLIC_APP_URL);
+        retorno.searchParams.set("reserva", referencia.id);
+        inicio = await webpay.create(orden, referencia.id, monto, retorno.href) as InicioWebpay;
         if (inicio.url !== URL_FORMULARIO_WEBPAY || !inicio.token) {
           throw new Error("Webpay devolvió un formulario inesperado.");
         }
@@ -57,6 +54,7 @@ export async function POST(request: Request) {
 
       if (Date.now() >= vencimiento) return respuestaError(409, "El tiempo para pagar terminó.");
 
+      // El retorno solo confirma el token guardado. Sin confirmación, Transbank no cobra el intento anterior.
       tx.update(referencia, {
         webpayToken: inicio.token,
         webpayOrdenCompra: orden,

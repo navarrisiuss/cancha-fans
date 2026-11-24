@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Timestamp } from "firebase-admin/firestore";
-import { consultasDelDia, seSuperponen } from "../../../../lib/disponibilidad";
+import { consultasDelDia, esIdDeDocumento, seSuperponen } from "../../../../lib/disponibilidad";
 import { dbAdmin } from "../../../../lib/firebase/admin";
 import { notificar } from "../../../../lib/notificaciones/notificar";
 import { PORCENTAJE_COMISION } from "../../../../lib/reglas";
@@ -35,7 +35,14 @@ async function recibir(request: Request) {
     const aborto = Boolean(tokenAborto || orden);
     retornoNormal = !aborto;
     const token = tokenAborto ?? tokenNormal;
-    if (!token && (!orden || !sesion)) return redirigir(request, comprobante);
+    if (!token && !orden) {
+      const reservaId = consulta.get("reserva");
+      if (esIdDeDocumento(reservaId)) {
+        comprobante = `/reservas/${encodeURIComponent(reservaId)}/comprobante`;
+      }
+      return redirigir(request, comprobante);
+    }
+    if (!token && !sesion) return redirigir(request, comprobante);
 
     const db = dbAdmin();
     // Una reserva como máximo: el token y la orden identifican una transacción de Webpay.
