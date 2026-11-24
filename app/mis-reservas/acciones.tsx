@@ -41,7 +41,7 @@ export function ModalReserva({ titulo, boton, descripcion, abierto, enviando, er
           <form onSubmit={alEnviar} className="mt-5 grid gap-4 text-sm" aria-busy={enviando}>
             {children}
             {error && (
-              <p role="alert" className={`font-semibold ${error.requiereAccion ? "text-red-700" : "text-[#12241C]"}`}>
+              <p role="alert" className={`font-semibold ${error.requiereAccion ? "text-[#A8302D]" : "text-[#12241C]"}`}>
                 {error.texto}
               </p>
             )}
