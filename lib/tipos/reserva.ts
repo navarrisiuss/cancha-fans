@@ -23,6 +23,11 @@ export type Reserva = {
   jugadorId: string;
   jugadorNombre: string;
   jugadorEmail: string;
+  // Los pide el checkout antes de pagar (RUT normalizado "12345678-5", teléfono "+56912345678") y
+  // los ve el dueño en Reservas recibidas. Opcionales: las reservas anteriores al checkout con datos
+  // no los tienen, y quedan en null mientras la reserva no se paga.
+  jugadorRut?: string | null;
+  jugadorTelefono?: string | null;
 
   // Denormalizado: "Mis reservas" se pinta con una sola consulta y el precio es histórico.
   complejoId: string;

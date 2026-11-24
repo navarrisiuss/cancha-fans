@@ -85,6 +85,9 @@ complejos.
 
 - `codigo` (legible, tipo `A-10482`, generado al crear)
 - `jugadorId`, `jugadorNombre`, `jugadorEmail`
+- `jugadorRut`, `jugadorTelefono` (opcionales): los pide el checkout antes de pagar y se guardan en
+  la misma transacción que inicia el pago. El RUT va normalizado (`12345678-5`, validado con
+  `lib/rut.ts`) y el teléfono como `+569XXXXXXXX`. Las reservas antiguas no los tienen.
 - `complejoId`, `complejoNombre`, `complejoComuna`, `ownerId`
 - `canchaId`, `canchaNombre`, `canchaFormato`
 - `inicio`, `fin` (timestamps)
@@ -105,11 +108,14 @@ complejos.
 Los tipos están en `lib/tipos/reserva.ts`. El estado que ve el usuario se calcula con
 `estadoVisibleReserva` de `lib/reservas-estado.ts`.
 
-Índices compuestos necesarios (se crean a mano en la consola de Firebase → Firestore → Índices;
-este proyecto no usa la CLI de Firebase):
+Índices compuestos necesarios (se crean en la consola de Firebase → Firestore → Índices; la lista
+completa queda también en `firestore.indexes.json`, que usan los emuladores):
 - `jugadorId` + `inicio` **descendente** (Mis reservas, de la más reciente a la más antigua)
-- `canchaId` + `inicio` (cálculo de disponibilidad)
-- `ownerId` + `inicio` (panel del arrendatario)
+- `canchaId` + `inicio` (cálculo de disponibilidad, por día y por semana)
+- `estado` + `comision` + `precioTotal` (métricas del admin; `sum()` exige incluir los campos sumados)
+- `estado` + `inicio` + `comision` + `precioTotal` (métricas del admin filtradas por mes)
+- Resumen del arrendatario: `ownerId` + `inicio` (reservas de hoy) y los que pidan sus agregaciones
+  sobre `ownerId` + `estado`; se crean con el enlace del error y se agregan a `firestore.indexes.json`.
 
 En `bloqueos` hace falta `canchaId` + `fin` (cálculo de disponibilidad: un bloqueo puede empezar
 otro día y seguir vigente). Si falta un índice, el error de Firestore trae un enlace que lo crea.

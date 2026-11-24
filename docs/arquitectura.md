@@ -72,14 +72,17 @@ forma de la petición ni de la respuesta sin avisar a quien los implementa.
 | Endpoint | Quién llama | Contrato |
 |---|---|---|
 | `GET /api/disponibilidad?complejoId&canchaId&fecha=YYYY-MM-DD` | cualquiera | `{ bloques: [{ inicio, fin, estado: "libre" \| "ocupado" }] }`, con `inicio` y `fin` en ISO. Sin caché. |
+| `GET /api/disponibilidad/semana?complejoId&canchaId&desde=YYYY-MM-DD` | cualquiera | `{ dias: [{ fecha, bloques: [...] }] }`, 7 días desde `desde`, con los bloques de cada día como el endpoint por día. Dos consultas en total (reservas y bloqueos del rango). Sin caché. |
 | `POST /api/reservas` | jugador con sesión | Body `{ complejoId, canchaId, inicio, tipoPago }` → `{ reservaId }`. Crea la reserva en `pendiente_pago` dentro de una transacción. |
-| `POST /api/pagos/iniciar` | jugador con sesión | Body `{ reservaId }` → `{ url, token }` para redirigir a Webpay (integración). |
+| `POST /api/pagos/iniciar` | jugador con sesión | Body `{ reservaId, nombre, rut, telefono, aceptaReglas: true }` → `{ url, token }` para redirigir a Webpay (integración). Valida los datos y los guarda en la reserva (`jugadorNombre`, `jugadorRut`, `jugadorTelefono`) en la misma transacción. Cada llamada crea una transacción nueva de Webpay. |
 | `GET\|POST /api/pagos/retorno` | Webpay | Confirma o expira la reserva y redirige a `/reservas/{id}/comprobante`. |
 | `POST /api/reservas/{id}/cancelar` | jugador o dueño | Body `{ motivo? }`. El rol se deduce en el servidor; si cancela el dueño, el motivo es obligatorio. |
 | `POST /api/resenas` | jugador con sesión | Crea la reseña de una reserva jugada y actualiza el rating del complejo en la misma transacción. |
 | `POST` y `DELETE /api/bloqueos` | dueño del complejo | Crea o quita un bloqueo; rechaza si choca con una reserva activa. |
 | `POST /api/complejos/{id}/canchas` y `PATCH …/canchas/{canchaId}` | dueño del complejo | Crean y editan canchas, incluido activar y desactivar; mantienen `formatosDisponibles` en el mismo batch. |
 | `POST /api/complejos/{id}/revisar` | admin | Aprobar o rechazar un complejo. |
+| `GET /api/admin/metricas?mes=YYYY-MM` | admin | `{ mes, reservasPagadas, gmv, comision }` con agregaciones `count()` y `sum()`. |
+| `GET /api/arrendatario/metricas?mes=YYYY-MM` | usuario con sesión (sus complejos) | Resumen del dueño sobre `reservas` con `ownerId == uid`: reservas pagadas, ventas, cobrado en línea, canceladas, ocupación del mes y reservas de hoy. Agregaciones, sin leer documentos salvo las canchas y las reservas del día. |
 
 La autorización de cada endpoint sale de `lib/firebase/`: `exigirUsuario` (sesión iniciada),
 `exigirDuenoDeComplejo` (dueño de ese complejo) y `exigirAdmin`. Desde el navegador se llama con
