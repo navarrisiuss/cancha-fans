@@ -10,6 +10,7 @@ import Link from "next/link";
 import { signOut } from "firebase/auth";
 import { Logo } from "../app/componentes-ui";
 import { auth } from "../lib/firebase/client";
+import { useEsAdmin } from "../lib/firebase/use-es-admin";
 import { useSesion } from "../lib/firebase/use-sesion";
 import { Campanita } from "./notificaciones/campanita";
 
@@ -17,6 +18,7 @@ const enlace = "text-sm font-semibold text-[#12241C] transition-opacity hover:op
 
 export function Encabezado() {
   const { usuario, cargando } = useSesion();
+  const esAdmin = useEsAdmin(usuario);
   // Primer nombre para el saludo; si la cuenta no tiene nombre, se usa el correo.
   const nombre = usuario?.displayName?.trim().split(/\s+/)[0] || usuario?.email || "";
 
@@ -30,7 +32,12 @@ export function Encabezado() {
         {/* Mientras Firebase confirma la sesión no se muestra nada, para no parpadear entre
             "Iniciar sesión" y "Cerrar sesión". */}
         {!cargando && usuario && (
-          <nav className="flex items-center gap-5">
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {esAdmin && (
+              <Link href="/admin" className={enlace}>
+                Administración
+              </Link>
+            )}
             <Link href="/mis-reservas" className={enlace}>
               Mis reservas
             </Link>
