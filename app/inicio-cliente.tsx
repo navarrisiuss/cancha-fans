@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../lib/firebase/client";
+import { useEsAdmin } from "../lib/firebase/use-es-admin";
 import { useSesion } from "../lib/firebase/use-sesion";
 import { Campanita } from "../components/notificaciones/campanita";
 import { Icono, Logo } from "./componentes-ui";
@@ -28,6 +29,7 @@ export function InicioInteractivo({
   const [menuAbierto, setMenuAbierto] = useState(false);
   const campoFecha = useRef<HTMLInputElement>(null);
   const { usuario, cargando } = useSesion();
+  const esAdmin = useEsAdmin(usuario);
   // Primer nombre para el saludo; si la cuenta no tiene nombre, se usa el correo.
   const nombreSaludo = usuario?.displayName?.trim().split(/\s+/)[0] || usuario?.email || "";
 
@@ -60,6 +62,11 @@ export function InicioInteractivo({
           {!cargando && usuario && (
             <div className="hidden items-center gap-3 md:flex">
               <span className="px-2 text-sm font-semibold text-white/80">Hola, {nombreSaludo}</span>
+              {esAdmin && (
+                <Link href="/admin" className="px-2 text-sm font-semibold text-white transition-opacity hover:opacity-70">
+                  Administración
+                </Link>
+              )}
               <Link href="/mis-reservas" className="px-2 text-sm font-semibold text-white transition-opacity hover:opacity-70">
                 Mis reservas
               </Link>
@@ -103,6 +110,11 @@ export function InicioInteractivo({
               {!cargando && usuario && (
                 <>
                   <span className="text-white/80">Hola, {nombreSaludo}</span>
+                  {esAdmin && (
+                    <Link href="/admin" onClick={() => setMenuAbierto(false)}>
+                      Administración
+                    </Link>
+                  )}
                   <Link href="/mis-reservas" onClick={() => setMenuAbierto(false)}>
                     Mis reservas
                   </Link>
