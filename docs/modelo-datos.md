@@ -37,6 +37,8 @@ No hay campo `role`. Ser arrendatario se deriva de tener complejos con `ownerId 
 - `formatosDisponibles` (array: `F5`, `F7`, `F11`) — denormalizado desde las canchas para poder
   filtrar en la búsqueda sin leer las subcolecciones
 - `notaAdmin`, `revisadoPor`, `revisadoAt`
+- `avisoAdminAt` (timestamp opcional): cuándo se notificó a los administradores la postulación. Lo
+  escribe solo el servidor (`POST /api/complejos/{id}/avisar-admin`) y evita avisos repetidos.
 - `ratingPromedio`, `totalResenas` (denormalizados)
 - `createdAt`, `updatedAt`
 

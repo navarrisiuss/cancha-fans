@@ -1,7 +1,9 @@
 // Layout de la zona /admin. Es de servidor porque solo compone el encabezado con la navegación
-// interna del panel y envuelve las páginas en el guard de cliente.
+// interna del panel y envuelve las páginas en el guard de cliente. La campanita es un componente
+// cliente (usa la sesión) y se puede montar desde aquí sin convertir el layout en cliente.
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Campanita } from "../../components/notificaciones/campanita";
 import { Logo } from "../componentes-ui";
 import { GuardAdmin } from "./guard-admin";
 
@@ -36,6 +38,7 @@ export default function LayoutAdmin({ children }: LayoutProps<"/admin">) {
             <Link href="/admin/usuarios" className={enlaceNav}>
               Usuarios
             </Link>
+            <Campanita />
           </nav>
         </div>
       </header>

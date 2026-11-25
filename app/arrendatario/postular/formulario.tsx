@@ -8,6 +8,7 @@ import { formatearRut, normalizarRut } from "../../../lib/rut";
 import { COMUNAS_POR_REGION, REGIONES, type Comuna, type Region } from "../../../lib/comunas";
 import { crearComplejo, MAX_BYTES_FOTO, MAX_FOTOS, TIPOS_FOTO } from "../../../lib/firebase/complejos";
 import type { MensajeError } from "../../../lib/firebase/errores-auth";
+import { fetchConSesion } from "../../../lib/firebase/fetch-con-sesion";
 import { useSesion } from "../../../lib/firebase/use-sesion";
 
 export function FormularioPostular() {
@@ -49,7 +50,7 @@ export function FormularioPostular() {
     setError(null);
     setEnviando(true);
     try {
-      await crearComplejo(
+      const complejoId = await crearComplejo(
         usuario.uid,
         {
           nombre: texto("nombre"),
@@ -60,6 +61,11 @@ export function FormularioPostular() {
         },
         { rut, razonSocial: texto("razonSocial"), datosBancarios: texto("datosBancarios") },
         datos.getAll("fotos").filter((f): f is File => f instanceof File && f.size > 0),
+      );
+      // Aviso a los administradores. No se espera ni se muestra su error: la postulación ya quedó
+      // enviada y aparece en la cola aunque el aviso falle.
+      void fetchConSesion(`/api/complejos/${complejoId}/avisar-admin`, { method: "POST", keepalive: true }).catch(
+        () => {},
       );
       // replace y no push: así "atrás" no vuelve al formulario ya enviado. El complejo nuevo aparece
       // "En revisión" en el listado, eso confirma el envío.

@@ -81,6 +81,7 @@ forma de la petición ni de la respuesta sin avisar a quien los implementa.
 | `POST` y `DELETE /api/bloqueos` | dueño del complejo | Crea o quita un bloqueo; rechaza si choca con una reserva activa. |
 | `POST /api/complejos/{id}/canchas` y `PATCH …/canchas/{canchaId}` | dueño del complejo | Crean y editan canchas, incluido activar y desactivar; mantienen `formatosDisponibles` en el mismo batch. |
 | `POST /api/complejos/{id}/revisar` | admin | Aprobar o rechazar un complejo. |
+| `POST /api/complejos/{id}/avisar-admin` | dueño del complejo | Sin body → `{ avisado }`. Notifica a los administradores que el complejo espera revisión; solo la primera vez (`avisoAdminAt`). 409 si ya no está en revisión. Lo llama el formulario de postulación. |
 | `GET /api/admin/metricas?mes=YYYY-MM` | admin | `{ mes, reservasPagadas, gmv, comision }` con agregaciones `count()` y `sum()`. |
 | `GET /api/arrendatario/metricas?mes=YYYY-MM` | usuario con sesión (sus complejos) | Resumen del dueño sobre `reservas` con `ownerId == uid`: reservas pagadas, ventas, cobrado en línea, canceladas, ocupación del mes y reservas de hoy. Agregaciones, sin leer documentos salvo las canchas y las reservas del día. |
 
