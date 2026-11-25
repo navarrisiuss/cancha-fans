@@ -170,7 +170,9 @@ export function Campanita({ claro = false }: { claro?: boolean }) {
       </button>
 
       {abierto && (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-[#DAD7CF] bg-white text-[#12241C] shadow-[0_24px_70px_rgba(18,36,28,0.18)]">
+        // En celular la campanita puede quedar a la izquierda del encabezado: el menú se ancla a
+        // los bordes de la pantalla (fixed sin top queda bajo el botón) para que no se salga.
+        <div className="fixed inset-x-4 z-50 mt-2 overflow-hidden rounded-2xl border border-[#DAD7CF] bg-white text-[#12241C] shadow-[0_24px_70px_rgba(18,36,28,0.18)] sm:absolute sm:left-auto sm:right-0 sm:w-80">
           <div className="flex items-center justify-between border-b border-[#E7E5DF] px-4 py-3">
             <span className="text-sm font-semibold">Notificaciones</span>
             {noLeidas > 0 && (
